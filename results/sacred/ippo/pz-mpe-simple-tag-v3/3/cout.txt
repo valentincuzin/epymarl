@@ -1,0 +1,249 @@
+[INFO 18:01:09] pymarl Running command 'my_main'
+[INFO 18:01:09] pymarl Started run with ID "3"
+[DEBUG 18:01:09] pymarl Starting Heartbeat
+[DEBUG 18:01:09] my_main Started
+[INFO 18:01:09] my_main Experiment Parameters:
+[INFO 18:01:09] my_main 
+
+{   'action_selector': 'soft_policies',
+    'add_value_last_step': True,
+    'agent': 'rnn',
+    'agent_output_type': 'pi_logits',
+    'batch_size': 10,
+    'batch_size_run': 10,
+    'buffer_cpu_only': True,
+    'buffer_size': 10,
+    'checkpoint_path': '',
+    'common_reward': True,
+    'critic_type': 'ac_critic',
+    'entropy_coef': 0.001,
+    'env': 'gymma',
+    'env_args': {   'key': 'pz-mpe-simple-tag-v3',
+                    'pretrained_wrapper': 'PretrainedTag',
+                    'seed': 213198735,
+                    'time_limit': 25},
+    'epochs': 4,
+    'eps_clip': 0.2,
+    'evaluate': False,
+    'gamma': 0.99,
+    'grad_norm_clip': 10,
+    'hidden_dim': 128,
+    'hypergroup': None,
+    'label': 'default_label',
+    'learner': 'ppo_learner',
+    'learner_log_interval': 10000,
+    'load_step': 0,
+    'local_results_path': 'results',
+    'log_interval': 50000,
+    'lr': 0.0003,
+    'mac': 'basic_mac',
+    'mask_before_softmax': True,
+    'name': 'ippo',
+    'obs_agent_id': True,
+    'obs_individual_obs': False,
+    'obs_last_action': False,
+    'optim_alpha': 0.99,
+    'optim_eps': 1e-05,
+    'q_nstep': 5,
+    'render': False,
+    'repeat_id': 1,
+    'reward_scalarisation': 'sum',
+    'runner': 'parallel',
+    'runner_log_interval': 10000,
+    'save_model': True,
+    'save_model_interval': 50000,
+    'save_replay': False,
+    'seed': 213198735,
+    'standardise_returns': False,
+    'standardise_rewards': True,
+    't_max': 20050000,
+    'target_update_interval_or_tau': 0.01,
+    'test_greedy': True,
+    'test_interval': 50000,
+    'test_nepisode': 100,
+    'use_cuda': True,
+    'use_rnn': False,
+    'use_tensorboard': False,
+    'use_wandb': True,
+    'wandb_mode': 'online',
+    'wandb_project': 'epymarl',
+    'wandb_save_model': False,
+    'wandb_team': 'valentincuzin-ucbl1'}
+
+[DEBUG 18:01:09] asyncio Using selector: EpollSelector
+[DEBUG 18:01:09] git.util sys.platform='linux', git_executable='git'
+[DEBUG 18:01:09] git.cmd Popen(['git', 'rev-parse', '--show-toplevel'], cwd=/home/val/Repo/epymarl, stdin=None, shell=False, universal_newlines=False)
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/val/.netrc.
+[DEBUG 18:01:09] urllib3.connectionpool Starting new HTTPS connection (1): api.wandb.ai:443
+[DEBUG 18:01:10] urllib3.connectionpool https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+[DEBUG 18:01:10] urllib3.connectionpool https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+wandb: Currently logged in as: valentincuzin (valentincuzin-ucbl1) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+[DEBUG 18:01:10] git.util sys.platform='linux', git_executable='git'
+[DEBUG 18:01:10] git.cmd Popen(['git', 'cat-file', '--batch-check'], cwd=/home/val/Repo/epymarl, stdin=<valid stream>, shell=False, universal_newlines=False)
+wandb: setting up run 93a65x1o
+wandb: Tracking run with wandb version 0.25.1
+wandb: Run data is saved locally in /home/val/Repo/epymarl/wandb/run-20260318_180110-93a65x1o
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run ethereal-plant-7
+wandb: ⭐️ View project at https://wandb.ai/valentincuzin-ucbl1/epymarl
+wandb: 🚀 View run at https://wandb.ai/valentincuzin-ucbl1/epymarl/runs/93a65x1o
+[INFO 18:01:12] my_main *******************
+[INFO 18:01:12] my_main WANDB RUN ID:
+[INFO 18:01:12] my_main 93a65x1o
+[INFO 18:01:12] my_main *******************
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:158: UserWarning: The `action_spaces` dictionary is deprecated. Use the `action_space` function instead.
+  warnings.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/pettingzoo/utils/conversions.py:144: UserWarning: The `observation_spaces` dictionary is deprecated. Use the `observation_space` function instead.
+  warnings.warn(
+[INFO 18:01:12] my_main Beginning training for 20050000 timesteps
+/home/val/Repo/epymarl/src/components/episode_buffer.py:93: UserWarning: Using a non-tuple sequence for multidimensional indexing is deprecated and will be changed in pytorch 2.9; use x[tuple(seq)] instead of x[seq]. In pytorch 2.9 this will be interpreted as tensor index, x[torch.tensor(seq)], which will result either in an error or a different result (Triggered internally at /pytorch/torch/csrc/autograd/python_variable_indexing.cpp:347.)
+  target["filled"][slices] = 1
+/home/val/Repo/epymarl/src/components/episode_buffer.py:105: UserWarning: Using a non-tuple sequence for multidimensional indexing is deprecated and will be changed in pytorch 2.9; use x[tuple(seq)] instead of x[seq]. In pytorch 2.9 this will be interpreted as tensor index, x[torch.tensor(seq)], which will result either in an error or a different result (Triggered internally at /pytorch/torch/csrc/autograd/python_variable_indexing.cpp:347.)
+  self._check_safe_view(v, target[k][_slices])
+/home/val/Repo/epymarl/src/components/episode_buffer.py:106: UserWarning: Using a non-tuple sequence for multidimensional indexing is deprecated and will be changed in pytorch 2.9; use x[tuple(seq)] instead of x[seq]. In pytorch 2.9 this will be interpreted as tensor index, x[torch.tensor(seq)], which will result either in an error or a different result (Triggered internally at /pytorch/torch/csrc/autograd/python_variable_indexing.cpp:347.)
+  target[k][_slices] = v.view_as(target[k][_slices])
+/home/val/Repo/epymarl/src/components/episode_buffer.py:110: UserWarning: Using a non-tuple sequence for multidimensional indexing is deprecated and will be changed in pytorch 2.9; use x[tuple(seq)] instead of x[seq]. In pytorch 2.9 this will be interpreted as tensor index, x[torch.tensor(seq)], which will result either in an error or a different result (Triggered internally at /pytorch/torch/csrc/autograd/python_variable_indexing.cpp:347.)
+  v = target[k][_slices]
+/home/val/Repo/epymarl/src/components/episode_buffer.py:113: UserWarning: Using a non-tuple sequence for multidimensional indexing is deprecated and will be changed in pytorch 2.9; use x[tuple(seq)] instead of x[seq]. In pytorch 2.9 this will be interpreted as tensor index, x[torch.tensor(seq)], which will result either in an error or a different result (Triggered internally at /pytorch/torch/csrc/autograd/python_variable_indexing.cpp:347.)
+  target[new_k][_slices] = v.view_as(target[new_k][_slices])
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/miniconda3/envs/epymarl/lib/python3.13/site-packages/gymnasium/utils/passive_env_checker.py:245: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+/home/val/Repo/epymarl/src/components/episode_buffer.py:152: UserWarning: Using a non-tuple sequence for multidimensional indexing is deprecated and will be changed in pytorch 2.9; use x[tuple(seq)] instead of x[seq]. In pytorch 2.9 this will be interpreted as tensor index, x[torch.tensor(seq)], which will result either in an error or a different result (Triggered internally at /pytorch/torch/csrc/autograd/python_variable_indexing.cpp:347.)
+  new_data.transition_data[k] = v[item]
+[INFO 18:01:13] my_main t_env: 250 / 20050000
+[INFO 18:01:13] my_main Estimated time left: 3 minutes, 46 seconds. Time passed: 0 seconds
+[INFO 18:01:14] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/250
+[INFO 18:01:43] my_main Recent Stats | t_env:      50000 | Episode:     2000
+advantage_mean:           -0.2711	agent_grad_norm:           0.2633	critic_grad_norm:          2.7531	critic_loss:               7.4005
+ep_length_mean:           25.0000	pg_loss:                   0.2640	pi_max:                    0.3381	q_taken_mean:             -0.2431
+return_mean:              42.8250	return_std:               65.5459	target_mean:              -0.5142	td_error_abs:              1.7201
+test_ep_length_mean:      25.0000	test_return_mean:         37.5000	test_return_std:          62.8391	
+[INFO 18:01:43] my_main t_env: 50250 / 20050000
+[INFO 18:01:43] my_main Estimated time left: 3 hours, 22 minutes, 0 seconds. Time passed: 30 seconds
+[INFO 18:01:44] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/50250
+[INFO 18:02:15] my_main Recent Stats | t_env:     100000 | Episode:     4000
+advantage_mean:            0.3816	agent_grad_norm:           0.3970	critic_grad_norm:          8.9666	critic_loss:              11.6204
+ep_length_mean:           25.0000	pg_loss:                  -0.3883	pi_max:                    0.3941	q_taken_mean:             -0.5335
+return_mean:              42.7800	return_std:               64.2790	target_mean:              -0.1519	td_error_abs:              2.0918
+test_ep_length_mean:      25.0000	test_return_mean:         42.6000	test_return_std:          65.4332	
+[INFO 18:02:15] my_main t_env: 100250 / 20050000
+[INFO 18:02:15] my_main Estimated time left: 3 hours, 31 minutes, 16 seconds. Time passed: 1 minutes, 2 seconds
+[INFO 18:02:16] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/100250
+[INFO 18:02:47] my_main Recent Stats | t_env:     150000 | Episode:     6000
+advantage_mean:            0.2560	agent_grad_norm:           0.5398	critic_grad_norm:         15.9584	critic_loss:              13.3349
+ep_length_mean:           25.0000	pg_loss:                  -0.2695	pi_max:                    0.6268	q_taken_mean:             -0.6144
+return_mean:              56.6250	return_std:               74.0022	target_mean:              -0.3584	td_error_abs:              2.3437
+test_ep_length_mean:      25.0000	test_return_mean:         51.0000	test_return_std:          75.1061	
+[INFO 18:02:47] my_main t_env: 150250 / 20050000
+[INFO 18:02:47] my_main Estimated time left: 3 hours, 33 minutes, 22 seconds. Time passed: 1 minutes, 34 seconds
+[INFO 18:02:48] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/150250
+[INFO 18:03:17] my_main Recent Stats | t_env:     200000 | Episode:     8000
+advantage_mean:            0.2327	agent_grad_norm:           0.6878	critic_grad_norm:         22.6307	critic_loss:              13.6613
+ep_length_mean:           25.0000	pg_loss:                  -0.2439	pi_max:                    0.7822	q_taken_mean:              1.7022
+return_mean:              70.8450	return_std:               86.1139	target_mean:               1.9349	td_error_abs:              2.5434
+test_ep_length_mean:      25.0000	test_return_mean:         54.1500	test_return_std:          77.6031	
+[INFO 18:03:17] my_main t_env: 200250 / 20050000
+[INFO 18:03:17] my_main Estimated time left: 3 hours, 19 minutes, 18 seconds. Time passed: 2 minutes, 4 seconds
+[INFO 18:03:18] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/200250
+[INFO 18:03:47] my_main Recent Stats | t_env:     250000 | Episode:    10000
+advantage_mean:           -0.2113	agent_grad_norm:           1.0085	critic_grad_norm:         36.2412	critic_loss:              18.5725
+ep_length_mean:           25.0000	pg_loss:                   0.2023	pi_max:                    0.8271	q_taken_mean:              2.0292
+return_mean:              85.0950	return_std:              103.6535	target_mean:               1.8180	td_error_abs:              2.9971
+test_ep_length_mean:      25.0000	test_return_mean:         61.9800	test_return_std:          87.0946	
+[INFO 18:03:47] my_main t_env: 250250 / 20050000
+[INFO 18:03:47] my_main Estimated time left: 3 hours, 18 minutes, 55 seconds. Time passed: 2 minutes, 35 seconds
+[INFO 18:03:48] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/250250
+[INFO 18:04:18] my_main Recent Stats | t_env:     300000 | Episode:    12000
+advantage_mean:           -0.1137	agent_grad_norm:           0.9977	critic_grad_norm:         50.8188	critic_loss:              24.5674
+ep_length_mean:           25.0000	pg_loss:                   0.0911	pi_max:                    0.8237	q_taken_mean:              3.7430
+return_mean:             114.0000	return_std:              123.1732	target_mean:               3.6293	td_error_abs:              3.3149
+test_ep_length_mean:      25.0000	test_return_mean:         74.4000	test_return_std:          99.1177	
+[INFO 18:04:18] my_main t_env: 300250 / 20050000
+[INFO 18:04:18] my_main Estimated time left: 3 hours, 23 minutes, 10 seconds. Time passed: 3 minutes, 5 seconds
+[INFO 18:04:19] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/300250
+[INFO 18:04:46] my_main Recent Stats | t_env:     350000 | Episode:    14000
+advantage_mean:           -0.3026	agent_grad_norm:           1.2593	critic_grad_norm:         74.3799	critic_loss:              31.8130
+ep_length_mean:           25.0000	pg_loss:                   0.2874	pi_max:                    0.8285	q_taken_mean:              5.6432
+return_mean:             136.2900	return_std:              142.3290	target_mean:               5.3406	td_error_abs:              3.7363
+test_ep_length_mean:      25.0000	test_return_mean:         92.5800	test_return_std:         112.1536	
+[INFO 18:04:46] my_main t_env: 350250 / 20050000
+[INFO 18:04:46] my_main Estimated time left: 3 hours, 3 minutes, 52 seconds. Time passed: 3 minutes, 33 seconds
+[INFO 18:04:47] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/350250
+[INFO 18:05:14] my_main Recent Stats | t_env:     400000 | Episode:    16000
+advantage_mean:            0.7899	agent_grad_norm:           1.7925	critic_grad_norm:        144.0017	critic_loss:              47.9420
+ep_length_mean:           25.0000	pg_loss:                  -0.8110	pi_max:                    0.8400	q_taken_mean:             11.2209
+return_mean:             155.7150	return_std:              148.3670	target_mean:              12.0107	td_error_abs:              4.7921
+test_ep_length_mean:      25.0000	test_return_mean:        110.7600	test_return_std:         121.0879	
+[INFO 18:05:14] my_main t_env: 400250 / 20050000
+[INFO 18:05:14] my_main Estimated time left: 3 hours, 4 minutes, 24 seconds. Time passed: 4 minutes, 2 seconds
+[INFO 18:05:15] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/400250
+[INFO 18:05:44] my_main Recent Stats | t_env:     450000 | Episode:    18000
+advantage_mean:            0.7846	agent_grad_norm:           1.7661	critic_grad_norm:        184.9469	critic_loss:              58.6596
+ep_length_mean:           25.0000	pg_loss:                  -0.8159	pi_max:                    0.8232	q_taken_mean:             19.4362
+return_mean:             162.1500	return_std:              153.1254	target_mean:              20.2207	td_error_abs:              5.2620
+test_ep_length_mean:      25.0000	test_return_mean:        123.7800	test_return_std:         132.2792	
+[INFO 18:05:44] my_main t_env: 450250 / 20050000
+[INFO 18:05:44] my_main Estimated time left: 3 hours, 11 minutes, 59 seconds. Time passed: 4 minutes, 31 seconds
+[INFO 18:05:45] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/450250
+[INFO 18:06:14] my_main Recent Stats | t_env:     500000 | Episode:    20000
+advantage_mean:           -0.6140	agent_grad_norm:           1.7968	critic_grad_norm:        152.1840	critic_loss:              71.5468
+ep_length_mean:           25.0000	pg_loss:                   0.5766	pi_max:                    0.8410	q_taken_mean:             12.7097
+return_mean:             160.0650	return_std:              154.8249	target_mean:              12.0956	td_error_abs:              5.3140
+test_ep_length_mean:      25.0000	test_return_mean:        135.9000	test_return_std:         136.4724	
+[INFO 18:06:14] my_main t_env: 500250 / 20050000
+[INFO 18:06:14] my_main Estimated time left: 3 hours, 14 minutes, 12 seconds. Time passed: 5 minutes, 1 seconds
+[INFO 18:06:14] my_main Saving models to results/models/ippo_seed213198735_pz-mpe-simple-tag-v3_2026-03-18 18:01:09.440760/500250

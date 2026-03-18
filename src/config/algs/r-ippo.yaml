@@ -30,6 +30,6 @@ q_nstep: 5 # 1 corresponds to normal r + gammaV
 critic_type: "ac_critic"
 epochs: 4
 eps_clip: 0.2
-name: "ippo"
+name: "r-ippo"
 
-t_max: 20050000
+t_max: 1000000

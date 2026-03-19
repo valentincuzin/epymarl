@@ -1,0 +1,37 @@
+# code adapted from https://github.com/wendelinboehmer/dcg
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+# PYG
+import torch_geometric
+from torch_geometric.nn import GCNConv, GATv2Conv, Sequential
+from torch_geometric.transforms import BaseTransform
+from torch_geometric.utils import degree
+
+class GNNAgent(nn.Module):
+    def __init__(self, input_shape, args):
+        super(GNNAgent, self).__init__()
+        self.args = args
+        
+        self.fc1 = GATv2Conv(input_shape)
+        if self.args.use_rnn:
+            self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)
+        else:
+            self.rnn = nn.Linear(args.hidden_dim, args.hidden_dim)
+        self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
+
+    def init_hidden(self):
+        # make hidden states on same device as model
+        return self.fc1.weight.new(1, self.args.hidden_dim).zero_()
+
+    def forward(self, inputs, hidden_state):
+        x = F.relu(self.fc1(inputs))
+        h_in = hidden_state.reshape(-1, self.args.hidden_dim)
+        if self.args.use_rnn:
+            h = self.rnn(x, h_in)
+        else:
+            h = F.relu(self.rnn(x))
+        q = self.fc2(h)
+        return q, h
+

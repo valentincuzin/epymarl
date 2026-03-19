@@ -14,7 +14,7 @@ class GNNAgent(nn.Module):
         super(GNNAgent, self).__init__()
         self.args = args
         
-        self.fc1 = GATv2Conv(input_shape)
+        self.fc1 = GATv2Conv()
         if self.args.use_rnn:
             self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)
         else:

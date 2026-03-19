@@ -72,7 +72,12 @@ class EpisodeBatch:
             if episode_const:
                 self.data.episode_data[field_key] = th.zeros((batch_size, *shape), dtype=dtype, device=self.device)
             else:
-                self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
+                if field_key == "graph":  # TODO créer pour chaque situation un graphe des interactions possibles (CR)
+                    graph = th.ones(*shape, dtype=dtype,device=self.device)- th.eye(vshape[0],device=self.device)
+                    self.data.transition_data[field_key] = graph.repeat(batch_size,1,1)
+                    # self.data.transition_data[field_key] = th.ones((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
+                else:
+                    self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
 
     def extend(self, scheme, groups=None):
         self._setup_data(scheme, self.groups if groups is None else groups, self.batch_size, self.max_seq_length)

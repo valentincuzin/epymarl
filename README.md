@@ -1,5 +1,24 @@
 # Extended Python MARL framework - EPyMARL
 
+This repo based on EPyMARL intend to implement and test new communication model based on GNNs.
+
+1. Add graphs in scheme and automate graph creation depending on the communication range arguments
+2. Add visualization of the dynamic graphs at least in test
+3. Implement GPPO in EPyMARL, and then move on my new model
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 EPyMARL is  an extension of [PyMARL](https://github.com/oxwhirl/pymarl), and includes
 - **New!** Support for training in environments with individual rewards for all agents (for all algorithms that support such settings)
 - **New!** Updated EPyMARL to use maintained [Gymnasium](https://gymnasium.farama.org/index.html) library instead of deprecated OpenAI Gym version 0.21.

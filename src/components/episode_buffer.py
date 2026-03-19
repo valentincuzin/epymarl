@@ -2,7 +2,6 @@ import torch as th
 import numpy as np
 from types import SimpleNamespace as SN
 
-
 class EpisodeBatch:
     def __init__(self,
                  scheme,
@@ -28,6 +27,7 @@ class EpisodeBatch:
             self._setup_data(self.scheme, self.groups, batch_size, max_seq_length, self.preprocess)
 
     def _setup_data(self, scheme, groups, batch_size, max_seq_length, preprocess):
+        # TODO bien comprendre cette partie
         if preprocess is not None:
             for k in preprocess:
                 assert k in scheme
@@ -72,10 +72,9 @@ class EpisodeBatch:
             if episode_const:
                 self.data.episode_data[field_key] = th.zeros((batch_size, *shape), dtype=dtype, device=self.device)
             else:
-                if field_key == "graph":  # TODO créer pour chaque situation un graphe des interactions possibles (CR)
+                if field_key == "graph":
                     graph = th.ones(*shape, dtype=dtype,device=self.device)- th.eye(vshape[0],device=self.device)
                     self.data.transition_data[field_key] = graph.repeat(batch_size,1,1)
-                    # self.data.transition_data[field_key] = th.ones((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
                 else:
                     self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
 

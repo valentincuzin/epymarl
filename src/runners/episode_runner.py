@@ -6,6 +6,7 @@ from components.episode_buffer import EpisodeBatch
 from envs import REGISTRY as env_REGISTRY
 from envs import register_smac, register_smacv2
 
+from utils.gnn_utils import batch_from_dense_to_ptg
 
 class EpisodeRunner:
     def __init__(self, args, logger):
@@ -81,8 +82,12 @@ class EpisodeRunner:
                 "avail_actions": [self.env.get_avail_actions()],
                 "obs": [self.env.get_obs()],
             }
-
             self.batch.update(pre_transition_data, ts=self.t)
+            # TODO bien comprendre la shape de obs
+            graphs_data = {
+                "graphs": [batch_from_dense_to_ptg(pre_transition_data["obs"], self.batch_size, self.args)]
+            }
+            self.batch.update(graphs_data, ts=self.t)
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1

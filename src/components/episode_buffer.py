@@ -69,12 +69,13 @@ class EpisodeBatch:
             else:
                 shape = vshape
 
+            # TODO prove when it's append
             if episode_const:
+                print("DEBUG:  ##### it's append!! ###################")
                 self.data.episode_data[field_key] = th.zeros((batch_size, *shape), dtype=dtype, device=self.device)
             else:
-                if field_key == "graph":
-                    graph = th.ones(*shape, dtype=dtype,device=self.device)- th.eye(vshape[0],device=self.device)
-                    self.data.transition_data[field_key] = graph.repeat(batch_size,1,1)
+                if field_key == "graphs":
+                    self.data.transition_data[field_key] = []
                 else:
                     self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
 
@@ -83,7 +84,8 @@ class EpisodeBatch:
 
     def to(self, device):
         for k, v in self.data.transition_data.items():
-            self.data.transition_data[k] = v.to(device)
+            if isinstance(v, th.Tensor):
+                self.data.transition_data[k] = v.to(device)
         for k, v in self.data.episode_data.items():
             self.data.episode_data[k] = v.to(device)
         self.device = device
@@ -104,8 +106,17 @@ class EpisodeBatch:
                 raise KeyError("{} not found in transition or episode data".format(k))
 
             dtype = self.scheme[k].get("dtype", th.float32)
-            if type(v) == list:
-                v = th.tensor(np.array(v), dtype=dtype, device=self.device)
+            if k == "graphs":
+                assert isinstance(target[k], list), f"target[{k}] must be a list of graphs, not {type(target[k])}"
+                if (isinstance(ts, slice) and ts.stop < len(target[k])) or (isinstance(ts, int) and ts < len(target[k])):
+                    # Batch size (bs slice) is treated more smartly in pyG structure data.Batch
+                    print("deb:", len(v), '\n\n', v)
+                    target[k][ts] = v[ts]
+                else:
+                    target[k].append(v)
+                continue
+            if isinstance(v, list):
+                v = th.tensor(v, dtype=dtype, device=self.device)
             self._check_safe_view(v, target[k][_slices])
             target[k][_slices] = v.view_as(target[k][_slices])
 
@@ -153,7 +164,10 @@ class EpisodeBatch:
             item = self._parse_slices(item)
             new_data = self._new_data_sn()
             for k, v in self.data.transition_data.items():
-                new_data.transition_data[k] = v[item]
+                if k == "graphs":
+                    new_data.transition_data[k] = v[item[1]]
+                else:
+                    new_data.transition_data[k] = v[item]
             for k, v in self.data.episode_data.items():
                 new_data.episode_data[k] = v[item[0]]
 

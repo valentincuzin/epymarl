@@ -109,7 +109,7 @@ def run_sequential(args, logger):
     scheme = {
         "state": {"vshape": env_info["state_shape"]},
         "obs": {"vshape": env_info["obs_shape"], "group": "agents"},
-        "graphs": {"vshape": (env_info["n_agents"],), "group": "agents", "dtype": th.int},
+        "graphs": {"vshape": (args.batch_size*env_info["n_agents"], env_info["obs_shape"]), "group": "agents"},
         "actions": {"vshape": (1,), "group": "agents", "dtype": th.long},
         "avail_actions": {
             "vshape": (env_info["n_actions"],),

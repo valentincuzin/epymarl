@@ -11,7 +11,11 @@ import sys
 import yaml
 
 import numpy as np
-from sacred import Experiment, SETTINGS
+from sacred import SETTINGS
+SETTINGS["CAPTURE_MODE"] = (
+    "no"  # set to "no" if you want to see stdout/stderr in console
+)
+from sacred import Experiment
 from sacred.observers import FileStorageObserver
 from sacred.utils import apply_backspaces_and_linefeeds
 import torch as th
@@ -19,9 +23,6 @@ import torch as th
 from utils.logging import get_logger
 from run import run
 
-SETTINGS["CAPTURE_MODE"] = (
-    "fd"  # set to "no" if you want to see stdout/stderr in console
-)
 logger = get_logger()
 
 ex = Experiment("pymarl")

@@ -80,14 +80,12 @@ class EpisodeRunner:
             pre_transition_data = {
                 "state": [self.env.get_state()],
                 "avail_actions": [self.env.get_avail_actions()],
-                "obs": [self.env.get_obs()],
+                "obs": [self.env.get_obs()],  # shape: 1, batch_size, n_agents, dim_obs
             }
             self.batch.update(pre_transition_data, ts=self.t)
-            # TODO bien comprendre la shape de obs
-            graphs_data = {
-                "graphs": [batch_from_dense_to_ptg(pre_transition_data["obs"], self.batch_size, self.args)]
-            }
-            self.batch.update(graphs_data, ts=self.t)
+
+            graphs = batch_from_dense_to_ptg(pre_transition_data["obs"], self.batch_size, self.args)
+            self.batch.update({"graphs": graphs}, ts=self.t)
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
@@ -122,6 +120,9 @@ class EpisodeRunner:
         if test_mode and self.args.render:
             print(f"Episode return: {episode_return}")
         self.batch.update(last_data, ts=self.t)
+
+        graphs = batch_from_dense_to_ptg(last_data["obs"], self.batch_size, self.args)
+        self.batch.update({"graphs": graphs}, ts=self.t)
 
         # Select actions in the last stored state
         actions = self.mac.select_actions(

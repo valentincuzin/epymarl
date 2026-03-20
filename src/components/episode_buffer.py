@@ -75,7 +75,8 @@ class EpisodeBatch:
                 self.data.episode_data[field_key] = th.zeros((batch_size, *shape), dtype=dtype, device=self.device)
             else:
                 if field_key == "graphs":
-                    self.data.transition_data[field_key] = []
+                    # The ADJ take in account all potential batch
+                    self.data.transition_data[field_key] = th.zeros((max_seq_length, *shape), dtype=dtype ,device=self.device)
                 else:
                     self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
 
@@ -96,7 +97,7 @@ class EpisodeBatch:
             if k in self.data.transition_data:
                 target = self.data.transition_data
                 if mark_filled:
-                    target["filled"][slices] = 1
+                    target["filled"][tuple(slices)] = 1
                     mark_filled = False
                 _slices = slices
             elif k in self.data.episode_data:
@@ -105,20 +106,15 @@ class EpisodeBatch:
             else:
                 raise KeyError("{} not found in transition or episode data".format(k))
 
-            dtype = self.scheme[k].get("dtype", th.float32)
             if k == "graphs":
-                assert isinstance(target[k], list), f"target[{k}] must be a list of graphs, not {type(target[k])}"
-                if (isinstance(ts, slice) and ts.stop < len(target[k])) or (isinstance(ts, int) and ts < len(target[k])):
-                    # Batch size (bs slice) is treated more smartly in pyG structure data.Batch
-                    print("deb:", len(v), '\n\n', v)
-                    target[k][ts] = v[ts]
-                else:
-                    target[k].append(v)
+                # does not handle batch size in this tensor, because adj come from data.Batch graph. Thus _slices[1] for taking only max_seq_length dimension
+                target[k][_slices[1]] = v.view_as(target[k][_slices[1]])
                 continue
+            dtype = self.scheme[k].get("dtype", th.float32)
             if isinstance(v, list):
-                v = th.tensor(v, dtype=dtype, device=self.device)
-            self._check_safe_view(v, target[k][_slices])
-            target[k][_slices] = v.view_as(target[k][_slices])
+                v = th.tensor(np.array(v), dtype=dtype, device=self.device)
+            self._check_safe_view(v, target[k][tuple(_slices)])
+            target[k][tuple(_slices)] = v.view_as(target[k][tuple(_slices)])
 
             if k in self.preprocess:
                 new_k = self.preprocess[k][0]

@@ -85,7 +85,7 @@ class EpisodeRunner:
             self.batch.update(pre_transition_data, ts=self.t)
 
             graphs = batch_from_dense_to_ptg(pre_transition_data["obs"], self.batch_size, self.args)
-            self.batch.update({"graphs": graphs}, ts=self.t)
+            self.batch.update({"graphs": graphs.edge_index.unsqueeze(0)}, ts=self.t)
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
@@ -122,7 +122,7 @@ class EpisodeRunner:
         self.batch.update(last_data, ts=self.t)
 
         graphs = batch_from_dense_to_ptg(last_data["obs"], self.batch_size, self.args)
-        self.batch.update({"graphs": graphs}, ts=self.t)
+        self.batch.update({"graphs": graphs.edge_index.unsqueeze(0)}, ts=self.t)
 
         # Select actions in the last stored state
         actions = self.mac.select_actions(

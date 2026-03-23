@@ -109,7 +109,6 @@ def run_sequential(args, logger):
     scheme = {
         "state": {"vshape": env_info["state_shape"]},
         "obs": {"vshape": env_info["obs_shape"], "group": "agents"},
-        "graphs": {"vshape": (2, 0)},
         "actions": {"vshape": (1,), "group": "agents", "dtype": th.long},
         "avail_actions": {
             "vshape": (env_info["n_actions"],),
@@ -118,7 +117,6 @@ def run_sequential(args, logger):
         },
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }
-    print(scheme)
     # For individual rewards in gymmai reward is of shape (1, n_agents)
     if args.common_reward:
         scheme["reward"] = {"vshape": (1,)}

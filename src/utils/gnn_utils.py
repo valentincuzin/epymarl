@@ -45,6 +45,7 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     graphs.ptr = th.arange(0, (batch_size + 1) * args.n_agents, args.n_agents)
     graphs.batch = th.repeat_interleave(b, args.n_agents)
     graphs.x = x
+    graphs.max_num_nodes = x.shape[0]
     graphs.pos = pos
     graphs.vel = vel
     graphs.edge_attr = None

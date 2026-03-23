@@ -2,6 +2,7 @@ import torch as th
 import numpy as np
 from types import SimpleNamespace as SN
 
+
 class EpisodeBatch:
     def __init__(self,
                  scheme,
@@ -27,7 +28,6 @@ class EpisodeBatch:
             self._setup_data(self.scheme, self.groups, batch_size, max_seq_length, self.preprocess)
 
     def _setup_data(self, scheme, groups, batch_size, max_seq_length, preprocess):
-        # TODO bien comprendre cette partie
         if preprocess is not None:
             for k in preprocess:
                 assert k in scheme
@@ -74,19 +74,14 @@ class EpisodeBatch:
                 print("DEBUG:  ##### it's append!! ###################")
                 self.data.episode_data[field_key] = th.zeros((batch_size, *shape), dtype=dtype, device=self.device)
             else:
-                if field_key == "graphs":
-                    # The ADJ take in account all potential batch
-                    self.data.transition_data[field_key] = th.zeros((max_seq_length, *shape), dtype=dtype ,device=self.device)
-                else:
-                    self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
+                self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
 
     def extend(self, scheme, groups=None):
         self._setup_data(scheme, self.groups if groups is None else groups, self.batch_size, self.max_seq_length)
 
     def to(self, device):
         for k, v in self.data.transition_data.items():
-            if isinstance(v, th.Tensor):
-                self.data.transition_data[k] = v.to(device)
+            self.data.transition_data[k] = v.to(device)
         for k, v in self.data.episode_data.items():
             self.data.episode_data[k] = v.to(device)
         self.device = device
@@ -106,10 +101,6 @@ class EpisodeBatch:
             else:
                 raise KeyError("{} not found in transition or episode data".format(k))
 
-            if k == "graphs":
-                # does not handle batch size in this tensor, because adj come from data.Batch graph. Thus _slices[1] for taking only max_seq_length dimension
-                target[k][_slices[1]] = v.view_as(target[k][_slices[1]])
-                continue
             dtype = self.scheme[k].get("dtype", th.float32)
             if isinstance(v, list):
                 v = th.tensor(np.array(v), dtype=dtype, device=self.device)
@@ -118,10 +109,10 @@ class EpisodeBatch:
 
             if k in self.preprocess:
                 new_k = self.preprocess[k][0]
-                v = target[k][_slices]
+                v = target[k][tuple(_slices)]
                 for transform in self.preprocess[k][1]:
                     v = transform.transform(v)
-                target[new_k][_slices] = v.view_as(target[new_k][_slices])
+                target[new_k][tuple(_slices)] = v.view_as(target[new_k][tuple(_slices)])
 
     def _check_safe_view(self, v, dest):
         idx = len(v.shape) - 1
@@ -160,10 +151,7 @@ class EpisodeBatch:
             item = self._parse_slices(item)
             new_data = self._new_data_sn()
             for k, v in self.data.transition_data.items():
-                if k == "graphs":
-                    new_data.transition_data[k] = v[item[1]]
-                else:
-                    new_data.transition_data[k] = v[item]
+                new_data.transition_data[k] = v[tuple(item)]
             for k, v in self.data.episode_data.items():
                 new_data.episode_data[k] = v[item[0]]
 
@@ -260,4 +248,3 @@ class ReplayBuffer(EpisodeBatch):
                                                                         self.buffer_size,
                                                                         self.scheme.keys(),
                                                                         self.groups.keys())
-

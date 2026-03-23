@@ -15,6 +15,7 @@ class RNNAgent(nn.Module):
         else:
             self.rnn = nn.Linear(args.hidden_dim, args.hidden_dim)
         self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
+        print(f"\n\nDEBUG: total number of PARAMETERS for RNNAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     def init_hidden(self):
         # make hidden states on same device as model

@@ -5,6 +5,7 @@ import torch as th
 # PYG
 import torch_geometric as pyg
 from torch_geometric.transforms import BaseTransform
+from torch_geometric.utils import to_dense_adj
 
 # TODO à priori à virer, car simplifier dans batch_from_dense_to_ptg
 # def get_edge_index(topology: str, self_loops: bool, n_agents: int, device: str):

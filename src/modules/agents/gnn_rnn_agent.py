@@ -11,9 +11,9 @@ from torch_geometric.utils import degree
 
 from utils.gnn_utils import batch_from_dense_to_ptg
 
-class GNNAgent(nn.Module):
+class GnnRnnAgent(nn.Module):
     def __init__(self, input_shape, args):
-        super(GNNAgent, self).__init__()
+        super(GnnRnnAgent, self).__init__()
         self.args = args
         
         # comm modules:
@@ -26,7 +26,7 @@ class GNNAgent(nn.Module):
         self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)
 
         self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
-        print(f"\n\nDEBUG: total number of PARAMETERS for GNNAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
+        print(f"\n\nDEBUG: total number of PARAMETERS for GnnRnnAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     def init_hidden(self):
         # make hidden states on same device as model
@@ -43,10 +43,7 @@ class GNNAgent(nn.Module):
         h = self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr)
 
         h_in = hidden_states.reshape(-1, self.args.hidden_dim)
-        if self.args.use_rnn:
-            h = self.rnn(h, h_in)
-        else:
-            h = F.relu(self.rnn(h))
+        h = self.rnn(h, h_in)
         return h
 
     def _select_communication(self, x):

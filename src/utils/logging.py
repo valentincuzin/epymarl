@@ -58,12 +58,14 @@ class Logger:
         ).hexdigest()[-10:]
 
         group_name = "_".join([alg_name, env_name, self.config_hash])
+        run_name = f"{env_name}_{alg_name}_{config["agent"]}_s{config["seed"]}"  # ou autre format souhaité
 
         self.wandb = wandb.init(
             entity=team_name,
             project=project_name,
             config=config,
             group=group_name,
+            name=run_name,
             mode=mode,
         )
 

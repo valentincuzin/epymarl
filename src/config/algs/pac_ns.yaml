@@ -35,5 +35,3 @@ critic_type: "pac_critic_ns"
 state_value_type: "cv_critic_ns"
 
 name: "pac_sarsa_ns"
-
-t_max: 500500

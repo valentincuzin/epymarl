@@ -8,7 +8,6 @@ import threading
 from types import SimpleNamespace as SN
 
 import torch as th
-from tqdm import tqdm
 
 from controllers import REGISTRY as mac_REGISTRY
 from components.episode_buffer import ReplayBuffer
@@ -196,17 +195,7 @@ def run_sequential(args, logger):
 
     logger.console_logger.info("Beginning training for {} timesteps".format(args.t_max))
 
-    # total number of *episodes* (not timesteps) we will run
-    total_episodes = (args.t_max - runner.t_env) // args.batch_size_run + 1
-
-    # tqdm iterator – description matches the original console output
-    pbar = tqdm(
-        range(total_episodes),
-        desc="Training",
-        unit="episode",
-        dynamic_ncols=True,
-    )
-    for _ in pbar:
+    while runner.t_env <= args.t_max:
         # Run for a whole episode at a time
         episode_batch = runner.run(test_mode=False)
         buffer.insert_episode_batch(episode_batch)

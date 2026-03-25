@@ -2,10 +2,10 @@
 
 This repo based on EPyMARL intend to implement and test new communication model based on GNNs.
 
-1. Add graphs in scheme and automate graph creation depending on the communication range arguments
+1. Add mp4 visualization record on one env of training
 2. Add visualization of the dynamic graphs at least in test
-3. Implement GPPO in EPyMARL, and then move on my new model
-
+3. Add good name handler in wandb + in config.yaml files
+3. Extensive test on my models (3 seeds) for week prof of my intuition
 
 
 

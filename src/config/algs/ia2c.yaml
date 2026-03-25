@@ -30,5 +30,3 @@ q_nstep: 5 # 1 corresponds to normal r + gammaV
 critic_type: "ac_critic"
 
 name: "ia2c"
-
-t_max: 20050000

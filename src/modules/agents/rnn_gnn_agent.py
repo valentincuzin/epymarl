@@ -11,9 +11,9 @@ from torch_geometric.utils import degree
 
 from utils.gnn_utils import batch_from_dense_to_ptg
 
-class GNNAgent2(nn.Module):
+class RnnGnnAgent(nn.Module):
     def __init__(self, input_shape, args):
-        super(GNNAgent2, self).__init__()
+        super(RnnGnnAgent, self).__init__()
         self.args = args
         
         # comm modules:
@@ -26,7 +26,7 @@ class GNNAgent2(nn.Module):
         self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)
 
         self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
-        print(f"\n\nDEBUG: total number of PARAMETERS for GNNAgent2: {sum(p.numel() for p in self.parameters())} #####\n\n")
+        print(f"\n\nDEBUG: total number of PARAMETERS for RnnGnnAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     def init_hidden(self):
         # make hidden states on same device as model

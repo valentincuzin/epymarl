@@ -6,29 +6,6 @@ import torch as th
 import torch_geometric as pyg
 from torch_geometric.transforms import BaseTransform
 
-# TODO à priori à virer, car simplifier dans batch_from_dense_to_ptg
-# def get_edge_index(topology: str, self_loops: bool, n_agents: int, device: str):
-#     if topology == "full":
-        # adjacency = th.ones(n_agents, n_agents, device=device, dtype=th.long)
-        # edge_index, _ = pyg.utils.dense_to_sparse(adjacency)
-#         if not self_loops:
-#             edge_index, _ = pyg.utils.remove_self_loops(edge_index)
-#     elif topology == "empty":
-#         if self_loops:
-#             edge_index = (
-#                 th.arange(n_agents, device=device, dtype=th.long)
-#                 .unsqueeze(0)
-#                 .repeat(2, 1)
-#             )
-#         else:
-#             edge_index = th.empty((2, 0), device=device, dtype=th.long)
-#     elif topology == "from_pos":
-#         edge_index = None
-#     else:
-#         raise ValueError(f"Topology {topology} not supported")
-
-#     return edge_index
-
 def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     if isinstance(x, list):
         x = th.tensor(x)

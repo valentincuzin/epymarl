@@ -46,5 +46,3 @@ msg_normalized: True          # Message normalization during greedy action selec
 
 
 name: "pac_sarsa_dcg_ns"
-
-t_max: 500500

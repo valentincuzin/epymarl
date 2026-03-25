@@ -31,5 +31,3 @@ critic_type: "cv_critic_ns"
 epochs: 4
 eps_clip: 0.2
 name: "mappo_ns"
-
-t_max: 20050000

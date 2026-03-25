@@ -1,0 +1,225 @@
+# code adapted from https://github.com/wendelinboehmer/dcg
+
+import torch as th
+import torch.nn as nn
+from torch.nn.parameter import Parameter
+import math
+
+# PYG
+from utils.gnn_utils import batch_from_dense_to_ptg, to_dense_adj
+
+class EGCNAgent(nn.Module):
+    def __init__(self, input_shape, args):
+        super(EGCNAgent, self).__init__()
+        self.args = args
+        assert self.args.use_rnn, "please mark use_rnn for this DGNN model"
+
+        # comm modules:
+        egcn_args = Namespace(
+            {
+                "feats_per_node": input_shape,
+                "layer_1_feats": args.hidden_dim,
+                # "layer_2_feats": args.hidden_dim,
+            }
+        )
+        self.egcns = EGCN(egcn_args, activation=nn.ReLU(), skipfeats=True)
+
+        self.fc2 = nn.Linear(args.hidden_dim+input_shape, args.n_actions)
+        print(
+            f"\n\nDEBUG: total number of PARAMETERS for EGCNAgent: {sum(p.numel() for p in self.parameters())} #####\n\n"
+        )
+
+    def init_hidden(self):
+        # make hidden states on same device as model
+        return th.zeros(1, self.args.hidden_dim)
+
+
+    def forward(self, inputs, hidden_states):
+        h = self._communication_process(inputs, hidden_states)
+        q = self.fc2(h)
+        return q, h
+
+    def _communication_process(self, inputs, hidden_states):
+        x = inputs
+        graphs = self._select_communication(x)
+        dense_adj = to_dense_adj(
+            graphs.edge_index,
+            max_num_nodes=graphs.max_num_nodes,
+        ).squeeze()
+        h = self.egcns(dense_adj, graphs.x)
+        return h
+
+    def _select_communication(self, x):
+        graphs = batch_from_dense_to_ptg(x, self.args.batch_size, self.args)
+        return graphs
+
+
+
+# Code from EvolveGCN-h (GRU) https://github.com/IBM/EvolveGCN/blob/master/egcn_h.py
+class EGCN(nn.Module):
+    def __init__(self, args, activation, device="cpu", skipfeats=False):
+        super().__init__()
+        GRCU_args = Namespace({})
+
+        feats = [args.feats_per_node, args.layer_1_feats]
+        self.device = device
+        self.skipfeats = skipfeats
+        self.GRCU_layers =  nn.ModuleList()
+        for i in range(1, len(feats)):
+            GRCU_args = Namespace(
+                {
+                    "in_feats": feats[i - 1],
+                    "out_feats": feats[i],
+                    "activation": activation,
+                }
+            )
+
+            grcu_i = GRCU(GRCU_args)
+            # print (i,'grcu_i', grcu_i)
+            self.GRCU_layers.append(grcu_i.to(self.device))
+
+    def forward(self, A_list, Nodes_list, nodes_mask_list=None):
+        node_feats = Nodes_list
+
+        for unit in self.GRCU_layers:
+            Nodes_list = unit(A_list, Nodes_list)  # , nodes_mask_list)
+        out = Nodes_list
+        if self.skipfeats:
+            out = th.cat(
+                (out, node_feats), dim=1
+            )  # use node_feats.to_dense() if 2hot encoded input
+        return out
+
+
+class GRCU(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        cell_args = Namespace({})
+        cell_args.rows = args.in_feats
+        cell_args.cols = args.out_feats
+
+        self.evolve_weights = mat_GRU_cell(cell_args)
+
+        self.activation = self.args.activation
+        self.GCN_init_weights = Parameter(
+            th.empty(self.args.in_feats, self.args.out_feats)
+        )
+        self.reset_param(self.GCN_init_weights)
+
+    def reset_param(self, t):
+        # Initialize based on the number of columns
+        stdv = 1.0 / math.sqrt(t.size(1))
+        t.data.uniform_(-stdv, stdv)
+
+    def forward(self, A_list, node_embs_list):  # ,mask_list):
+        GCN_weights = self.GCN_init_weights
+        node_embs = node_embs_list
+        # first evolve the weights from the initial and use the new weights with the node_embs
+        GCN_weights = self.evolve_weights(GCN_weights)  # ,node_embs,mask_list[t])
+        node_embs = self.activation(A_list.matmul(node_embs.matmul(GCN_weights)))
+
+        return node_embs
+
+
+class mat_GRU_cell(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        self.update = mat_GRU_gate(args.rows, args.cols, nn.Sigmoid())
+
+        self.reset = mat_GRU_gate(args.rows, args.cols, nn.Sigmoid())
+
+        self.htilda = mat_GRU_gate(args.rows, args.cols, nn.Tanh())
+
+        self.choose_topk = TopK(feats=args.rows, k=args.cols)
+
+    def forward(self, prev_Q):  # ,prev_Z,mask):
+        # z_topk = self.choose_topk(prev_Z,mask)
+        z_topk = prev_Q
+
+        update = self.update(z_topk, prev_Q)
+        reset = self.reset(z_topk, prev_Q)
+
+        h_cap = reset * prev_Q
+        h_cap = self.htilda(z_topk, h_cap)
+
+        new_Q = (1 - update) * prev_Q + update * h_cap
+
+        return new_Q
+
+
+class mat_GRU_gate(nn.Module):
+    def __init__(self, rows, cols, activation):
+        super().__init__()
+        self.activation = activation
+        # the k here should be in_feats which is actually the rows
+        self.W = Parameter(th.Tensor(rows, rows))
+        self.reset_param(self.W)
+
+        self.U = Parameter(th.Tensor(rows, rows))
+        self.reset_param(self.U)
+
+        self.bias = Parameter(th.zeros(rows, cols))
+
+    def reset_param(self, t):
+        # Initialize based on the number of columns
+        stdv = 1.0 / math.sqrt(t.size(1))
+        t.data.uniform_(-stdv, stdv)
+
+    def forward(self, x, hidden):
+        out = self.activation(self.W.matmul(x) + self.U.matmul(hidden) + self.bias)
+
+        return out
+
+
+class TopK(nn.Module):
+    def __init__(self, feats, k):
+        super().__init__()
+        self.scorer = Parameter(th.Tensor(feats, 1))
+        self.reset_param(self.scorer)
+
+        self.k = k
+
+    def reset_param(self, t):
+        # Initialize based on the number of rows
+        stdv = 1.0 / math.sqrt(t.size(0))
+        t.data.uniform_(-stdv, stdv)
+
+    def forward(self, node_embs, mask):
+        scores = node_embs.matmul(self.scorer) / self.scorer.norm()
+        scores = scores + mask
+
+        vals, topk_indices = scores.view(-1).topk(self.k)
+        topk_indices = topk_indices[vals > -float("Inf")]
+
+        if topk_indices.size(0) < self.k:
+            topk_indices = pad_with_last_val(topk_indices, self.k)
+
+        tanh = nn.Tanh()
+
+        if isinstance(node_embs, th.sparse.FloatTensor) or isinstance(
+            node_embs, th.cuda.sparse.FloatTensor
+        ):
+            node_embs = node_embs.to_dense()
+
+        out = node_embs[topk_indices] * tanh(scores[topk_indices].view(-1, 1))
+
+        # we need to transpose the output
+        return out.t()
+
+
+class Namespace(object):
+    """
+    helps referencing object in a dictionary as dict.key instead of dict['key']
+    """
+
+    def __init__(self, adict):
+        self.__dict__.update(adict)
+
+
+def pad_with_last_val(vect, k):
+    device = "cuda" if vect.is_cuda else "cpu"
+    pad = th.ones(k - vect.size(0), dtype=th.long, device=device) * vect[-1]
+    vect = th.cat([vect, pad])
+    return vect

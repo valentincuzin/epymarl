@@ -20,7 +20,7 @@ class GnnRnnAgent(nn.Module):
         self.e = nn.Sequential(
             nn.Linear(input_shape, args.hidden_dim),
             nn.ReLU())
-        self.gnns: MessagePassing  = GATv2Conv(args.hidden_dim, args.hidden_dim, edge_dim=5, residual=True)
+        self.gnns: MessagePassing  = GATv2Conv(args.hidden_dim, args.hidden_dim, edge_dim=3, residual=True)
 
         assert self.args.use_rnn, "please mark use_rnn for this DGNN model"
         self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)

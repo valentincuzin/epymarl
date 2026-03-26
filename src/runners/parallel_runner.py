@@ -34,6 +34,8 @@ class ParallelRunner:
             env_args[i]["seed"] += i
             env_args[i]["common_reward"] = self.args.common_reward
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
+        env_args[0]["prefix_video"]=self.args.unique_token,
+        env_args[0]["test_interval"]=self.args.test_interval,
         self.ps = [
             Process(
                 target=env_worker,

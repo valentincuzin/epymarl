@@ -10,8 +10,11 @@ env_args: {
   num_good: 3,
   num_adversaries: 10,
   num_obstacles: 3,
+  max_cycles: 50,
   num_agent_neighbors: 2,
   num_landmark_neighbors: 2,
+  dynamic_rescaling: True,
+  render_mode: 'rgb_array',
 } # Arguments for the environment
 
 batch_size_run: 1 # Number of environments to run in parallel
@@ -39,7 +42,7 @@ checkpoint_path: "" # Load a checkpoint from this path
 evaluate: False # Evaluate model for test_nepisode episodes and quit (no training)
 render: False # Render the environment when evaluating (only when evaluate == True)
 load_step: 0 # Load model trained on this many timesteps (0 if choose max possible)
-save_replay: True # Saving the replay of the model loaded from checkpoint_path
+save_replay: False # Saving the replay of the model loaded from checkpoint_path
 local_results_path: "results" # Path for local results
 
 # --- RL hyperparameters ---

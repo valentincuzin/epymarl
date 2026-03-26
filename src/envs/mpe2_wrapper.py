@@ -19,6 +19,7 @@ class MPE2Wrapper(gym.Env):
         self._env.reset()
 
         self.n_agents = self._env.num_agents
+        self.render_mode = self._env.render_mode
         self.last_obs = None
 
         self.action_space = Tuple(
@@ -35,7 +36,7 @@ class MPE2Wrapper(gym.Env):
         return obs, info
 
     def render(self, mode="human"):
-        return self._env.render(mode)
+        return self._env.render()
 
     def step(self, actions):
         dict_actions = {}

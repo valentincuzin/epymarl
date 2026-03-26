@@ -3,7 +3,7 @@ import warnings
 
 import gymnasium as gym
 from gymnasium.spaces import flatdim
-from gymnasium.wrappers import TimeLimit
+from gymnasium.wrappers import TimeLimit, RecordVideo
 import numpy as np
 
 from .multiagentenv import MultiAgentEnv
@@ -43,7 +43,13 @@ class GymmaWrapper(MultiAgentEnv):
         reward_scalarisation,
         **kwargs,
     ):
+        print('kwargs: ', kwargs)
         self._env = gym.make(f"{key}", **kwargs)
+        def step_trigger(step: int):
+            if step%50000 == 0:
+                return True
+            return False
+        self._env = RecordVideo(self._env, "results/videos/", name_prefix=f"{key}_s{seed}_", step_trigger=step_trigger)
         self._env = TimeLimit(self._env, max_episode_steps=time_limit)
         self._env = FlattenObservation(self._env)
 

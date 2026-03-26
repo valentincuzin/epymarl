@@ -36,6 +36,7 @@ class RandomTag(gym.Wrapper):
     """Tag with pretrained prey agent"""
 
     def __init__(self, *args, **kwargs):
+        print(kwargs)
         super().__init__(*args, **{})
         self.num_good = kwargs["num_good"]
         self.num_adversaries = kwargs["num_adversaries"]

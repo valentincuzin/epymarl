@@ -65,7 +65,7 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
 def _get_pos_from_x(x: th.Tensor, task_name):
     pos = None
     vel = None  # if there is no specific velocity, it's not a problem
-    if task_name == "pz-mpe-simple-tag-v3":
+    if "mpe" in task_name:
         pos = x[:, 2:4]
         vel = x[:, :2]
     elif task_name.startswith("rware:"):

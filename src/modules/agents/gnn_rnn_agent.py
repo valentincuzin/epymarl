@@ -14,7 +14,7 @@ class GnnRnnAgent(nn.Module):
         self.args = args
 
         # comm modules:
-        self.gnns: MessagePassing  = GATv2Conv(input_shape, args.hidden_dim, edge_dim=3)
+        self.gnns: MessagePassing  = GATv2Conv(input_shape, args.hidden_dim, edge_dim=5)
         self.rnn = nn.GRUCell(args.hidden_dim+input_shape, args.hidden_dim)
 
         self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)

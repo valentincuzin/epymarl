@@ -104,7 +104,13 @@ if __name__ == "__main__":
     # Load algorithm and env base configs
     env_config = _get_config(params, "--env-config", "envs")
     alg_config = _get_config(params, "--config", "algs")
+    for _v in list(params):
+        if _v.split("=")[0] == "--seed":
+            seed = int(_v.split("=")[1])
+            params.remove(_v)
+    config_dict["seed"] = seed
     # config_dict = {**config_dict, **env_config, **alg_config}
+
     config_dict = recursive_dict_update(config_dict, env_config)
     config_dict = recursive_dict_update(config_dict, alg_config)
 

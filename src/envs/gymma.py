@@ -48,15 +48,17 @@ class GymmaWrapper(MultiAgentEnv):
         self._env = gym.make(f"{key}", **kwargs)
         
         self.test_interval = test_interval
+        self.prefix_video = prefix_video
         if self.test_interval is not None and prefix_video is not None:
+            if isinstance(self.prefix_video, tuple):
+                    self.prefix_video = self.prefix_video[0]
             def step_trigger(step: int):
                 if isinstance(self.test_interval, tuple):
-                    print("TUPPPLE:  ", self.test_interval)
                     self.test_interval = self.test_interval[0]
                 if step%self.test_interval == 0:
                     return True
                 return False
-            self._env = RecordVideo(self._env, video_folder="results/videos/", name_prefix=prefix_video, step_trigger=step_trigger)
+            self._env = RecordVideo(self._env, video_folder="results/videos/", name_prefix=self.prefix_video, step_trigger=step_trigger)
         
         self._env = TimeLimit(self._env, max_episode_steps=time_limit)
         self._env = FlattenObservation(self._env)

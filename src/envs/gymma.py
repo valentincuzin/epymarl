@@ -18,6 +18,13 @@ except ImportError:
     )
 
 try:
+    from .mpe2_wrapper import MPE2Wrapper  # noqa
+except ImportError:
+    warnings.warn(
+        "PettingZoo is not installed, so these environments will not be available! To install, run `pip install pettingzoo`"
+    )
+
+try:
     from .vmas_wrapper import VMASWrapper  # noqa
 except ImportError:
     warnings.warn(
@@ -41,7 +48,7 @@ class GymmaWrapper(MultiAgentEnv):
         self._env = FlattenObservation(self._env)
 
         if pretrained_wrapper:
-            self._env = getattr(pretrained, pretrained_wrapper)(self._env)
+            self._env = getattr(pretrained, pretrained_wrapper)(self._env, **kwargs)
 
         self.n_agents = self._env.unwrapped.n_agents
         self.episode_limit = time_limit

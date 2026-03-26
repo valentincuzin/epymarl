@@ -1,4 +1,5 @@
 from .rnn_agent import RNNAgent
+from .mlp_agent import MLPAgent
 from .gnn_rnn_agent import GnnRnnAgent
 from .rnn_gnn_agent import RnnGnnAgent
 from .egcn_agent import EGCNAgent
@@ -7,6 +8,7 @@ from .rnn_feature_agent import RNNFeatureAgent
 
 
 REGISTRY = {}
+REGISTRY["mlp"] = MLPAgent
 REGISTRY["rnn"] = RNNAgent
 REGISTRY["gnn_rnn"] = GnnRnnAgent
 REGISTRY["rnn_gnn"] = RnnGnnAgent

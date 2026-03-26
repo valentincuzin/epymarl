@@ -7,7 +7,11 @@ env: "sc2" # Environment name
 common_reward: True  # Run experiment with common reward setup
 reward_scalarisation: "sum"  # How to aggregate rewards to single common reward (only used if common_reward is True)
 env_args: {
-
+  num_good: 3,
+  num_adversaries: 10,
+  num_obstacles: 3,
+  num_agent_neighbors: 2,
+  num_landmark_neighbors: 2,
 } # Arguments for the environment
 
 batch_size_run: 1 # Number of environments to run in parallel
@@ -26,7 +30,7 @@ seed: 0
 use_tensorboard: False # Log results to tensorboard
 use_wandb: True # Log results to W&B
 wandb_team: valentincuzin-ucbl1 # W&B team name
-wandb_project: epymarl3 # W&B project name
+wandb_project: epymarl4 # W&B project name
 wandb_mode: "online" # W&B mode (online/offline)
 wandb_save_model: False # Save models to W&B (only done if use_wandb is True and save_model is True)
 save_model: True # Save the models to disk

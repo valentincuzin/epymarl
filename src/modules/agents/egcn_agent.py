@@ -6,7 +6,8 @@ from torch.nn.parameter import Parameter
 import math
 
 # PYG
-from utils.gnn_utils import batch_from_dense_to_ptg, to_dense_adj
+from utils.gnn_utils import batch_from_dense_to_ptg
+from torch_geometric.utils import to_dense_adj
 
 class EGCNAgent(nn.Module):
     def __init__(self, input_shape, args):
@@ -54,7 +55,7 @@ class EGCNAgent(nn.Module):
         return graphs
 
 
-# Code from EvolveGCN-o (LSTM) https://github.com/IBM/EvolveGCN/blob/master/egcn_o.py
+# Code from EvolveGCN-o https://github.com/IBM/EvolveGCN/blob/master/egcn_o.py
 class EGCN(nn.Module):
     def __init__(self, args, activation, device="cpu", skipfeats=False):
         super().__init__()

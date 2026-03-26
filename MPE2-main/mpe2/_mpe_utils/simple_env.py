@@ -7,7 +7,7 @@ from gymnasium import spaces
 from gymnasium.utils import seeding
 from pettingzoo import AECEnv
 from pettingzoo.utils import wrappers
-from pettingzoo.utils.agent_selector import AgentSelector
+from pettingzoo.utils.agent_selector import agent_selector
 
 from mpe2._mpe_utils.core import Agent
 
@@ -79,7 +79,7 @@ class SimpleEnv(AECEnv):
             agent.name: idx for idx, agent in enumerate(self.world.agents)
         }
 
-        self._agent_selector = AgentSelector(self.agents)
+        self._agent_selector = agent_selector(self.agents)
 
         # set spaces
         self.action_spaces = dict()

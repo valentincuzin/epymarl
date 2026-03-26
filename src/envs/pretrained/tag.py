@@ -5,6 +5,7 @@ from gymnasium.spaces import Tuple
 import torch
 
 from .ddpg import DDPG
+from .mappo_ns import MAPPO_NS
 
 
 class FrozenTag(gym.Wrapper):
@@ -76,11 +77,11 @@ class PretrainedTag(gym.Wrapper):
         self.n_agents = self.num_adversaries
         self.unwrapped.n_agents = self.num_adversaries
 
-        self.preys = DDPG(16, 5, 128)
+        self.preys = MAPPO_NS(16, 5, 64)
         # current file dir
-        param_path = Path(__file__).parent / "prey_params.pt"
-        save_dict = torch.load(param_path)
-        self.preys.load_params(save_dict["agent_params"][-1])
+        param_path = Path(__file__).parent / "agent.th"
+        save_dict = torch.load(param_path, map_location="cpu")
+        self.preys.load_params(save_dict)
         self.preys.policy.eval()
         self.last_prey_obs = None
 
@@ -91,7 +92,7 @@ class PretrainedTag(gym.Wrapper):
 
     def step(self, action):
         prey_action = self.preys.step(self.last_prey_obs)
-        action = tuple(action) + (prey_action,)
+        action = tuple(action) + prey_action
         obs, rew, done, truncated, info = super().step(action)
         self.last_prey_obs = obs[-self.num_good:]
         obs = obs[:-self.num_good]

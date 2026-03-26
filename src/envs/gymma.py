@@ -41,15 +41,18 @@ class GymmaWrapper(MultiAgentEnv):
         seed,
         common_reward,
         reward_scalarisation,
+        test_interval,
+        prefix_video: str = None,
         **kwargs,
     ):
-        print('kwargs: ', kwargs)
         self._env = gym.make(f"{key}", **kwargs)
+        
         def step_trigger(step: int):
-            if step%50000 == 0:
+            if step%test_interval == 0:
                 return True
             return False
-        self._env = RecordVideo(self._env, "results/videos/", name_prefix=f"{key}_s{seed}_", step_trigger=step_trigger)
+        prefix_video = f"unamed_{key}_s{seed}" if prefix_video is None else prefix_video
+        self._env = RecordVideo(self._env, video_folder="results/videos/", name_prefix=prefix_video, step_trigger=step_trigger)
         self._env = TimeLimit(self._env, max_episode_steps=time_limit)
         self._env = FlattenObservation(self._env)
 

@@ -23,6 +23,8 @@ class EpisodeRunner:
 
         self.env = env_REGISTRY[self.args.env](
             **self.args.env_args,
+            prefix_video=self.args.unique_token,
+            test_interval=self.args.test_interval,
             common_reward=self.args.common_reward,
             reward_scalarisation=self.args.reward_scalarisation,
         )

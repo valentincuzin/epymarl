@@ -15,7 +15,7 @@ class RnnGnnAgent(nn.Module):
         self.rnn = nn.GRUCell(input_shape, args.hidden_dim)
 
         # comm modules:
-        self.gnns: MessagePassing  = GATv2Conv(args.hidden_dim, args.hidden_dim, edge_dim=3)
+        self.gnns: MessagePassing  = GATv2Conv(args.hidden_dim, args.hidden_dim, edge_dim=5)
 
         self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
         print(f"\n\nDEBUG: total number of PARAMETERS for RnnGnnAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")

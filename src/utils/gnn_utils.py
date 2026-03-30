@@ -6,6 +6,8 @@ import torch as th
 import torch_geometric as pyg
 from torch_geometric.transforms import BaseTransform
 
+# create a global list of Data to store maximum max_cycles of snapshot
+
 def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     if isinstance(x, list):
         x = th.tensor(x)
@@ -60,14 +62,29 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     if vel is not None:
         graphs = _RelVel()(graphs)
 
+    # if intended, store the graph in global list on cpu memory
+        # _print_graph(graphs, batch_size, args)
     return graphs
 
-def _get_pos_from_x(x: th.Tensor, task_name):
+def _print_graph(graphs, batch_size, args):
+    # retrive only the first graphs batch and create a Data object
+
+    # save Data in a list of Data
+
+    # only at the end of the episode:
+        # store the sequence of graph in InMemoryDataset,
+        # then save it onto the disk
+        # then empty global list of data
+
+    pass
+
+
+def _get_pos_from_x(x: th.Tensor, task_name: str):
     pos = None
     vel = None  # if there is no specific velocity, it's not a problem
-    if "mpe" in task_name:
-        pos = x[:, 2:4]
+    if 'mpe' in task_name:
         vel = x[:, :2]
+        pos = x[:, 2:4]
     elif task_name.startswith("rware:"):
         pos = x[:, :2]
     return pos, vel

@@ -31,7 +31,7 @@ class ParallelRunner:
         env_fn = env_REGISTRY[self.args.env]
         env_args = [self.args.env_args.copy() for _ in range(self.batch_size)]
         for i in range(self.batch_size):
-            env_args[i]["seed"] += i
+            env_args[i]["seed"] += i  # Remember: env seed are from 0 to batch_size always
             env_args[i]["common_reward"] = self.args.common_reward
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
         env_args[0]["prefix_video"]=self.args.unique_token,

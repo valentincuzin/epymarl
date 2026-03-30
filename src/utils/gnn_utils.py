@@ -33,7 +33,7 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
         graphs.edge_index = th.empty((2, 0), device=x.device, dtype=th.long)
         graphs = graphs.to(x.device)
         return graphs
-    if args.comm_range == -1:
+    if args.comm_range == -1: # no comm range
         adjacency = th.ones(args.n_agents, args.n_agents, device=x.device, dtype=th.long)
         edge_index, _ = pyg.utils.dense_to_sparse(adjacency)
         edge_index, _ = pyg.utils.remove_self_loops(edge_index)  # self-loops treat by add_self_loop option in methods to avoid double addition

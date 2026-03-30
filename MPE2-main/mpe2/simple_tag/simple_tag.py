@@ -40,7 +40,7 @@ Agent and adversary action space: `[no_action, move_left, move_right, move_down,
 ### Arguments
 
 ``` python
-simple_tag_v3.env(num_good=1, num_adversaries=3, num_obstacles=2, max_cycles=25, continuous_actions=False, dynamic_rescaling=False, curriculum=False, num_agent_neighbors=None, num_landmark_neighbors=None)
+simple_tag_v3.env(num_good=1, num_adversaries=3, num_obstacles=2, max_cycles=25, continuous_actions=False, dynamic_rescaling=False, curriculum=False, observation_range=None)
 ```
 
 
@@ -63,16 +63,12 @@ slow and become faster as stages advance, making them progressively harder to ca
 `env.unwrapped.set_curriculum_stage(n)` to jump to a specific stage. Stage changes take effect
 on the next `env.reset()`.
 
-`num_agent_neighbors`: **Partial observability.** Maximum number of *other agents* each agent
+`observation_range`: **Partial observability.** Maximum number of *other agents* each agent
 observes, selected by Euclidean distance (nearest first).  Observation slots beyond the
 available count are zero-padded so the observation shape remains fixed.  ``None`` (default)
 restores full observability (all agents observed) and preserves backwards-compatibility.
 Under PO, velocity information is restricted to good agents visible within the neighbour
 window; velocity slots for adversaries or padded slots are zero.
-
-`num_landmark_neighbors`: **Partial observability.** Maximum number of *landmarks* (obstacles)
-each agent observes, selected by Euclidean distance (nearest first).  Zero-padded to a fixed
-size when fewer landmarks are available.  ``None`` (default) = full observability.
 
 Curriculum stages (prey max_speed / accel as fraction of full speed 1.3 / 4.0):
   - Stage 0: 50% speed — prey is slow and easy to catch.
@@ -92,10 +88,6 @@ from gymnasium.utils import EzPickle
 from pettingzoo.utils.conversions import parallel_wrapper_fn
 
 from mpe2._mpe_utils.core import Agent, Landmark, World
-from mpe2._mpe_utils.partial_observability import (
-    padded_relative_positions,
-    padded_velocities,
-)
 from mpe2._mpe_utils.scenario import BaseScenario
 from mpe2._mpe_utils.simple_env import SimpleEnv, make_env
 
@@ -113,15 +105,11 @@ class raw_env(SimpleEnv, EzPickle):
         benchmark_data=False,
         curriculum=False,
         terminate_on_success=False,
-        num_agent_neighbors=None,
-        num_landmark_neighbors=None,
+        observation_range=None,
     ):
-        assert num_agent_neighbors is None or (
-            isinstance(num_agent_neighbors, int) and num_agent_neighbors > 0
-        ), "num_agent_neighbors must be a positive integer or None."
-        assert num_landmark_neighbors is None or (
-            isinstance(num_landmark_neighbors, int) and num_landmark_neighbors > 0
-        ), "num_landmark_neighbors must be a positive integer or None."
+        assert observation_range is None or (
+            isinstance(observation_range, float) and observation_range >= 0.0
+        ), "observation_range must be a positive float or None."
         EzPickle.__init__(
             self,
             num_good=num_good,
@@ -133,14 +121,12 @@ class raw_env(SimpleEnv, EzPickle):
             benchmark_data=benchmark_data,
             curriculum=curriculum,
             terminate_on_success=terminate_on_success,
-            num_agent_neighbors=num_agent_neighbors,
-            num_landmark_neighbors=num_landmark_neighbors,
+            observation_range=observation_range,
         )
         scenario = Scenario(
             curriculum=curriculum,
             terminate_on_success=terminate_on_success,
-            num_agent_neighbors=num_agent_neighbors,
-            num_landmark_neighbors=num_landmark_neighbors,
+            observation_range=observation_range,
         )
         world = scenario.make_world(num_good, num_adversaries, num_obstacles)
         SimpleEnv.__init__(
@@ -178,21 +164,25 @@ class Scenario(BaseScenario):
     # Prey (good agents) start slow, making them easier to catch.
     # Each stage increases prey speed toward full difficulty.
     CURRICULUM_STAGES = [
-        {"prey_speed_factor": 0.5},   # Stage 0: prey at 50% speed — easy
+        {"prey_speed_factor": 0.5},  # Stage 0: prey at 50% speed — easy
         {"prey_speed_factor": 0.75},  # Stage 1: prey at 75% speed — moderate
-        {"prey_speed_factor": 1.0},   # Stage 2: prey at 100% speed — full difficulty
+        {"prey_speed_factor": 1.0},  # Stage 2: prey at 100% speed — full difficulty
     ]
 
     # Base kinematic values for prey (good agents)
     _PREY_BASE_MAX_SPEED = 1.3
     _PREY_BASE_ACCEL = 4.0
 
-    def __init__(self, curriculum=False, terminate_on_success=False, num_agent_neighbors=None, num_landmark_neighbors=None,):
+    def __init__(
+        self,
+        curriculum=False,
+        terminate_on_success=False,
+        observation_range=None,
+    ):
         self.curriculum = curriculum
         self.curriculum_stage = 0
         self.terminate_on_success = terminate_on_success
-        self.num_agent_neighbors = num_agent_neighbors
-        self.num_landmark_neighbors = num_landmark_neighbors
+        self.observation_range = observation_range
 
     def advance_curriculum(self):
         """Move to the next curriculum stage. No-op at the final stage."""
@@ -240,6 +230,9 @@ class Scenario(BaseScenario):
             agent.collide = True
             agent.silent = True
             agent.size = 0.075 if agent.adversary else 0.05
+            agent.obs_range = (
+                self.observation_range
+            )  # every agents have the same obs range
             agent.accel = 3.0 if agent.adversary else 4.0
             agent.max_speed = 1.0 if agent.adversary else 1.3
         # add landmarks
@@ -274,7 +267,9 @@ class Scenario(BaseScenario):
                 landmark.state.p_vel = np.zeros(world.dim_p)
         # Apply curriculum speed scaling to prey (good agents).
         if self.curriculum:
-            speed_factor = self.CURRICULUM_STAGES[self.curriculum_stage]["prey_speed_factor"]
+            speed_factor = self.CURRICULUM_STAGES[self.curriculum_stage][
+                "prey_speed_factor"
+            ]
             for agent in world.agents:
                 if not agent.adversary:
                     agent.max_speed = self._PREY_BASE_MAX_SPEED * speed_factor
@@ -319,9 +314,7 @@ class Scenario(BaseScenario):
         rew = 0
         shape = False
         adversaries = self.adversaries(world)
-        if (
-            shape
-        ):  # reward can optionally be shaped (increased reward for increased distance from adversary)
+        if shape:  # reward can optionally be shaped (increased reward for increased distance from adversary)
             for adv in adversaries:
                 rew += 0.1 * np.sqrt(
                     np.sum(np.square(agent.state.p_pos - adv.state.p_pos))
@@ -351,9 +344,7 @@ class Scenario(BaseScenario):
         shape = False
         agents = self.good_agents(world)
         adversaries = self.adversaries(world)
-        if (
-            shape
-        ):  # reward can optionally be shaped (decreased reward for increased distance from agents)
+        if shape:  # reward can optionally be shaped (decreased reward for increased distance from agents)
             for adv in adversaries:
                 rew -= 0.1 * min(
                     np.sqrt(np.sum(np.square(a.state.p_pos - adv.state.p_pos)))
@@ -387,28 +378,29 @@ class Scenario(BaseScenario):
         """
         # Landmarks ---
         non_boundary_landmarks = [e for e in world.landmarks if not e.boundary]
-        entity_pos = padded_relative_positions(
-            agent, non_boundary_landmarks, self.num_landmark_neighbors
-        )
+        entity_pos = rang_pos(agent, non_boundary_landmarks)
 
         # Other agents ---
         others = [other for other in world.agents if other is not agent]
 
-        if self.num_agent_neighbors is None:
+        if self.observation_range is None:
             # Full observability
             other_pos = [o.state.p_pos - agent.state.p_pos for o in others]
             other_vel = [o.state.p_vel for o in others if not o.adversary]
         else:
             # Partial observability
-            other_pos = padded_relative_positions(
-                agent, others, self.num_agent_neighbors
-            )
-            other_vel = padded_velocities(
-                agent,
-                others,
-                self.num_agent_neighbors,
-                predicate=lambda e: not e.adversary,
-            )
+
+            # other_pos = padded_relative_positions(
+            #     agent, others, self.observation_range
+            # )
+            # other_vel = padded_velocities(
+            #     agent,
+            #     others,
+            #     self.observation_range,
+            #     predicate=lambda e: not e.adversary,
+            # )
+
+            other_pos, other_vel = rang_pos_vels(agent, others)
 
         return np.concatenate(
             [agent.state.p_vel]
@@ -417,3 +409,38 @@ class Scenario(BaseScenario):
             + other_pos
             + other_vel
         )
+
+def rang_pos(agent, others):
+    """
+    Get other positions and velocities
+    if there are in the observation range of the agent.
+    """
+    positions = []
+    for other in others:
+        euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
+        if euclidean_dist <= agent.obs_range:
+            positions.append(other.state.p_pos - agent.state.p_pos)
+        else:
+            positions.append(np.zeros(2))
+    return positions
+
+
+def rang_pos_vels(agent, others):
+    """
+    Get other positions and velocities
+    if there are in the observation range of the agent.
+    """
+    positions = []
+    velocities = []
+    for other in others:
+        euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
+        if euclidean_dist <= agent.obs_range:
+            positions.append(other.state.p_pos - agent.state.p_pos)
+            if not other.adversary:  # it's a prey
+                velocities.append(other.state.p_vel.copy())
+            else:
+                velocities.append(np.zeros(2))
+        else:
+            positions.append(np.zeros(2))
+            velocities.append(np.zeros(2))
+    return positions, velocities

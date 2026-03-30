@@ -340,11 +340,17 @@ class SimpleEnv(AECEnv):
             # 350 is an arbitrary scale factor to get pygame to render similar sizes as pyglet
             if self.dynamic_rescaling:
                 radius = entity.size * 350 * scaling_factor
+                if entity.obs_range is not None:
+                    obs_radius = (entity.size+entity.obs_range) * 350 * scaling_factor
             else:
                 radius = entity.size * 350
+                if entity.obs_range is not None:
+                    obs_radius = (entity.size+entity.obs_range) * 350
 
             pygame.draw.circle(self.screen, entity.color * 200, (x, y), radius)
             pygame.draw.circle(self.screen, (0, 0, 0), (x, y), radius, 1)  # borders
+            if entity.obs_range is not None:
+                pygame.draw.circle(self.screen, (0, 0, 0), (x, y), obs_radius, 1)  # borders
             assert (
                 0 < x < self.width and 0 < y < self.height
             ), f"Coordinates {(x, y)} are out of bounds."

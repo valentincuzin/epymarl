@@ -30,13 +30,17 @@ class GnnRnnAgent(nn.Module):
         return q, h
 
     def _communication_process(self, inputs, hidden_states):
+        print("input shape: ", inputs.shape)
         graphs = self._select_communication(inputs)
         h = F.relu(self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr))
+        print("graph output shape: ", h.shape)
         h = th.cat(  # skip connection like CD-GCN does
                 (h, inputs), dim=1
             )
+        print("after cat shape: ", h.shape)
         h_in = hidden_states.reshape(-1, self.args.hidden_dim)
         h = self.rnn(h, h_in)
+        print("rnn output shape: ", h.shape)
         return h
 
     def _select_communication(self, x):

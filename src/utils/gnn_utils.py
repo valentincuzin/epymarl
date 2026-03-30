@@ -6,6 +6,9 @@ import torch as th
 import torch_geometric as pyg
 from torch_geometric.transforms import BaseTransform
 
+import networkx as nx
+import matplotlib.pyplot as plt
+from itertools import count
 # create a global list of Data to store maximum max_cycles of snapshot
 
 def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
@@ -62,21 +65,22 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     if vel is not None:
         graphs = _RelVel()(graphs)
 
-    # if intended, store the graph in global list on cpu memory
+    # if current_t % args.test_interval == 0:  # TODO faire remonter le current_t ou placer ça ailleur
         # _print_graph(graphs, batch_size, args)
     return graphs
 
-def _print_graph(graphs, batch_size, args):
+def _print_graph(graphs: pyg.data.Batch, batch_size: int, args):
     # retrive only the first graphs batch and create a Data object
-
-    # save Data in a list of Data
-
-    # only at the end of the episode:
-        # store the sequence of graph in InMemoryDataset,
-        # then save it onto the disk
-        # then empty global list of data
-
-    pass
+    graph = pyg.data.Data()
+    graph.x = graphs.x.view(batch_size, args.n_agents, graphs.x.shape[-1])[0, ...]
+    graph.pos = graphs.pos.view(batch_size, args.n_agents, graphs.pos.shape[-1])[0, ...]
+    graph.vel = graphs.vel.view(batch_size, args.n_agents, graphs.vel.shape[-1])[0, ...]
+    # slice only node in range of batch_size
+    graph.edge_index = pyg.utils.unbatch_edge_index(graphs.edge_index, graphs.batch)[0]
+    G = pyg.utils.to_networkx(graph)
+    colors = [n for n in G.nodes()]
+    nx.draw(G, graph.pos.cpu().numpy(), node_size=20, arrowsize=5, node_color=colors)
+    plt.savefig(f"results/graphs/{args.unique_token}.png")
 
 
 def _get_pos_from_x(x: th.Tensor, task_name: str):

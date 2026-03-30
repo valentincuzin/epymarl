@@ -5,7 +5,7 @@ from gymnasium.spaces import Tuple
 import torch
 
 from .ddpg import DDPG
-from .mappo_ns import MAPPO_NS
+from .mappo import MAPPO
 
 
 class FrozenTag(gym.Wrapper):
@@ -77,7 +77,7 @@ class PretrainedTag(gym.Wrapper):
         self.n_agents = self.num_adversaries
         self.unwrapped.n_agents = self.num_adversaries
 
-        self.preys = MAPPO_NS(16, 5, 64)
+        self.preys = MAPPO(16, 5, 64)
         # current file dir
         param_path = Path(__file__).parent / "agent.th"
         save_dict = torch.load(param_path, map_location="cpu")

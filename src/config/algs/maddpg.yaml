@@ -16,7 +16,7 @@ mac: "maddpg_mac"
 reg: 0.001
 batch_size: 32
 lr: 0.0005
-use_rnn: True
+
 
 standardise_returns: False
 standardise_rewards: True

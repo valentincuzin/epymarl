@@ -24,7 +24,7 @@ mac: "non_shared_mac"
 agent: "rnn_ns"
 standardise_returns: False
 standardise_rewards: True
-use_rnn: False
+
 agent_output_type: "q"
 learner: "q_learner"
 double_q: True

@@ -1,4 +1,4 @@
-# --- IPPO specific parameters ---
+# --- MAPPO specific parameters ---
 
 action_selector: "soft_policies"
 mask_before_softmax: True
@@ -25,9 +25,10 @@ learner: "ppo_learner"
 entropy_coef: 0.001
 standardise_returns: False
 standardise_rewards: True
-
 q_nstep: 5 # 1 corresponds to normal r + gammaV
-critic_type: "ac_critic"
+critic_type: "cv_critic"
 epochs: 4
 eps_clip: 0.2
-name: "ippo"
+
+name: "g-mappo"
+agent: "gnn"

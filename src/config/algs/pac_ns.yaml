@@ -26,7 +26,7 @@ learner: "pac_learner"
 initial_entropy_coef: 20.0
 final_entropy_coef: 0.01
 entropy_end_ratio: 0.8
-use_rnn: False
+
 standardise_rewards: False
 q_nstep: 10 # 1 corresponds to normal r + gammaV
 

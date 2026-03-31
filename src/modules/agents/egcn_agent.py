@@ -13,7 +13,6 @@ class EGCNAgent(nn.Module):
     def __init__(self, input_shape, args):
         super(EGCNAgent, self).__init__()
         self.args = args
-        assert self.args.use_rnn, "please mark use_rnn for this DGNN model"
 
         # comm modules:
         egcn_args = Namespace(

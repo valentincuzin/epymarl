@@ -29,7 +29,6 @@ standardise_rewards: True
 
 hidden_dim: 64
 
-use_rnn: True
 critic_baseline_fn: "coma"
 critic_train_mode: "seq"
 critic_train_reps: 1

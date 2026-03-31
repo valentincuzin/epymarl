@@ -25,7 +25,6 @@ mac: "non_shared_mac"
 agent: "rnn_ns"
 standardise_returns: False
 standardise_rewards: True
-use_rnn: False
 agent_output_type: "pi_logits"
 learner: "coma_learner"
 critic_q_fn: "coma"

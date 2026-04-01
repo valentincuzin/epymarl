@@ -13,34 +13,35 @@ class GnnRnnAgent(nn.Module):
         super(GnnRnnAgent, self).__init__()
         self.args = args
 
-        # comm modules:
-        self.gnns: MessagePassing  = GATv2Conv(input_shape, args.hidden_dim, edge_dim=5)
-        self.rnn = nn.GRUCell(args.hidden_dim+input_shape, args.hidden_dim)
+        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
 
-        self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
+        # comm modules:
+        self.gnns: MessagePassing  = GATv2Conv(args.hidden_dim, args.hidden_dim, edge_dim=5)
+        self.rnn = nn.GRUCell(args.hidden_dim+args.hidden_dim, 2*args.hidden_dim)
+
+        self.fc2 = nn.Linear(2*args.hidden_dim, args.n_actions)
         print(f"\n\nDEBUG: total number of PARAMETERS for GnnRnnAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     def init_hidden(self):
         # make hidden states on same device as model
-        return self.gnns.lin_l.weight.new(1, self.args.hidden_dim).zero_()
+        param = next(self.parameters())
+        return param.new_zeros(1, 2*self.args.hidden_dim)
 
     def forward(self, inputs, hidden_states):
-        h = self._communication_process(inputs, hidden_states)
+        x = F.relu(self.fc1(inputs))
+        h = self._communication_process(inputs, x, hidden_states)
         q = self.fc2(h)
         return q, h
 
-    def _communication_process(self, inputs, hidden_states):
-        print("input shape: ", inputs.shape)
+    def _communication_process(self, inputs, x, hidden_states):
         graphs = self._select_communication(inputs)
+        graphs.x = x
         h = F.relu(self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr))
-        print("graph output shape: ", h.shape)
         h = th.cat(  # skip connection like CD-GCN does
-                (h, inputs), dim=1
+                (h, x), dim=1
             )
-        print("after cat shape: ", h.shape)
-        h_in = hidden_states.reshape(-1, self.args.hidden_dim)
+        h_in = hidden_states.reshape(-1, 2*self.args.hidden_dim)
         h = self.rnn(h, h_in)
-        print("rnn output shape: ", h.shape)
         return h
 
     def _select_communication(self, x):

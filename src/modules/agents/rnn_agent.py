@@ -10,18 +10,18 @@ class RNNAgent(nn.Module):
         self.args = args
 
         self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)
-        self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
+        self.rnn = nn.GRUCell(args.hidden_dim, 2*args.hidden_dim)
+        self.fc3 = nn.Linear(2*args.hidden_dim, args.n_actions)
         print(f"\n\nDEBUG: total number of PARAMETERS for RNNAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     def init_hidden(self):
         # make hidden states on same device as model
-        return self.fc1.weight.new(1, self.args.hidden_dim).zero_()
+        param = next(self.parameters())
+        return param.new_zeros(1, 2*self.args.hidden_dim)
 
     def forward(self, inputs, hidden_state):
         x = F.relu(self.fc1(inputs))
-        h_in = hidden_state.reshape(-1, self.args.hidden_dim)
+        h_in = hidden_state.reshape(-1, 2*self.args.hidden_dim)
         h = self.rnn(x, h_in)
-        q = self.fc2(h)
+        q = self.fc3(h)
         return q, h
-

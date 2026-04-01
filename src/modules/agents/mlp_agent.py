@@ -10,13 +10,14 @@ class MLPAgent(nn.Module):
         self.args = args
 
         self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        self.fc2 = nn.Linear(args.hidden_dim, args.hidden_dim)
-        self.fc3 = nn.Linear(args.hidden_dim, args.n_actions)
+        self.fc2 = nn.Linear(args.hidden_dim, 2*args.hidden_dim)
+        self.fc3 = nn.Linear(2*args.hidden_dim, args.n_actions)
         print(f"\n\nDEBUG: total number of PARAMETERS for MLPAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     def init_hidden(self):
         # make hidden states on same device as model
-        return self.fc1.weight.new(1, self.args.hidden_dim).zero_()
+        param = next(self.parameters())
+        return param.new_zeros(1, 2*self.args.hidden_dim)
 
     def forward(self, inputs, hidden_state=None):
         x = F.relu(self.fc1(inputs))

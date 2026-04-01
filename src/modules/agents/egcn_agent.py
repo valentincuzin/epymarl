@@ -2,6 +2,8 @@
 
 import torch as th
 import torch.nn as nn
+import torch.nn.functional as F
+
 from torch.nn.parameter import Parameter
 import math
 
@@ -14,34 +16,36 @@ class EGCNAgent(nn.Module):
         super(EGCNAgent, self).__init__()
         self.args = args
 
+        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
         # comm modules:
         egcn_args = Namespace(
             {
-                "feats_per_node": input_shape,
-                "layer_1_feats": args.hidden_dim,
+                "feats_per_node": args.hidden_dim,
+                "layer_1_feats": 2*args.hidden_dim,
                 # "layer_2_feats": args.hidden_dim,
             }
         )
         self.egcns = EGCN(egcn_args, activation=nn.ReLU(), skipfeats=True)
 
-        self.fc2 = nn.Linear(args.hidden_dim+input_shape, args.n_actions)
+        self.fc2 = nn.Linear(2*args.hidden_dim+args.hidden_dim, args.n_actions)
         print(
             f"\n\nDEBUG: total number of PARAMETERS for EGCNAgent: {sum(p.numel() for p in self.parameters())} #####\n\n"
         )
 
     def init_hidden(self):
         # make hidden states on same device as model
-        return th.zeros(1, self.args.hidden_dim)
-
+        param = next(self.parameters())
+        return param.new_zeros(1, self.args.hidden_dim)
 
     def forward(self, inputs, hidden_states):
-        h = self._communication_process(inputs, hidden_states)
+        x = F.relu(self.fc1(inputs))
+        h = self._communication_process(inputs, x)
         q = self.fc2(h)
         return q, h
 
-    def _communication_process(self, inputs, hidden_states):
-        x = inputs
-        graphs = self._select_communication(x)
+    def _communication_process(self, inputs, x):
+        graphs = self._select_communication(inputs)
+        graphs.x = x
         dense_adj = to_dense_adj(
             graphs.edge_index,
             max_num_nodes=graphs.max_num_nodes,

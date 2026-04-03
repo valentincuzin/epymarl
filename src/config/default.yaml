@@ -8,25 +8,25 @@ reward_scalarisation: "sum"  # How to aggregate rewards to single common reward 
 env_args: {
   num_good: 3,
   num_adversaries: 10,
-  num_obstacles: 3,
+  num_obstacles: 0,
   max_cycles: 50,
-  observation_range: 0.25,
+  # observation_range: 0.25,
   dynamic_rescaling: True,
   render_mode: 'rgb_array',
 } # Arguments for the environment
 
 # --- Communication Constraint ---
-comm_range: 0.25
+comm_range: 0.5
 
 use_cuda: True # Use gpu by default unless it isn't available
-buffer_cpu_only: True # If true we won't keep all of the replay buffer in vram
+buffer_cpu_only: False # If true we won't keep all of the replay buffer in vram
 seed: 0
 
 # --- Logging options ---
 use_tensorboard: False # Log results to tensorboard
 use_wandb: True # Log results to W&B
 wandb_team: valentincuzin-ucbl1 # W&B team name
-wandb_project: epymarl5 # W&B project name
+wandb_project: epymarl6 # W&B project name
 wandb_mode: "online" # W&B mode (online/offline)
 wandb_save_model: False # Save models to W&B (only done if use_wandb is True and save_model is True)
 save_model: True # Save the models to disk
@@ -41,7 +41,7 @@ local_results_path: "results" # Path for local results
 # --- RL hyperparameters ---
 gamma: 0.99
 optim_alpha: 0.99 # RMSProp alpha
-optim_eps: 0.00001 # RMSProp epsilon
+optim_eps: 0.00005 # RMSProp epsilon
 grad_norm_clip: 10 # Reduce magnitude of gradients above this L2 norm
 add_value_last_step: True
 

@@ -324,9 +324,9 @@ class SimpleEnv(AECEnv):
 
         # update geometry and text positions
         text_line = 0
-        for e, entity in enumerate(self.world.entities):
-            # geometry
-            x, y = entity.state.p_pos
+
+        def get_x_y(entity_pos):
+            x, y = entity_pos
             y *= (
                 -1
             )  # this makes the display mimic the old pyglet setup (ie. flips image)
@@ -336,24 +336,45 @@ class SimpleEnv(AECEnv):
             y = (y / cam_range) * self.height // 2 * 0.9
             x += self.width // 2
             y += self.height // 2
+            return x, y
+        for e, entity in enumerate(self.world.entities):
+            # geometry
+            x, y = get_x_y(entity.state.p_pos)
 
             # 350 is an arbitrary scale factor to get pygame to render similar sizes as pyglet
             if self.dynamic_rescaling:
                 radius = entity.size * 350 * scaling_factor
                 if entity.obs_range is not None:
-                    obs_radius = (entity.size+entity.obs_range) * 350 * scaling_factor
+                    obs_radius = (entity.size + entity.obs_range) * 350 * scaling_factor
             else:
                 radius = entity.size * 350
                 if entity.obs_range is not None:
-                    obs_radius = (entity.size+entity.obs_range) * 350
+                    obs_radius = (entity.size + entity.obs_range) * 350
 
             pygame.draw.circle(self.screen, entity.color * 200, (x, y), radius)
             pygame.draw.circle(self.screen, (0, 0, 0), (x, y), radius, 1)  # borders
             if entity.obs_range is not None:
-                pygame.draw.circle(self.screen, (0, 0, 0), (x, y), obs_radius, 1)  # borders
-            assert (
-                0 < x < self.width and 0 < y < self.height
-            ), f"Coordinates {(x, y)} are out of bounds."
+                pygame.draw.circle(
+                    self.screen, (0, 0, 0), (x, y), obs_radius, 1
+                )  # borders
+            if entity.comm_range is not None:
+                adversary_poses = [entity.state.p_pos for entity in self.world.entities if entity.adversary]
+                for o, other_pos in enumerate(adversary_poses):
+                    if o == e or not self.world.entities[e].adversary:  # other == me
+                        continue
+                    euclidean_dist = np.linalg.norm(other_pos - entity.state.p_pos)
+                    if euclidean_dist <= entity.comm_range:
+                        o_x, o_y = get_x_y(other_pos)
+                        pygame.draw.line(
+                            self.screen,
+                            entity.color * 200,
+                            (x, y),
+                            (o_x, o_y),
+                        )
+
+            assert 0 < x < self.width and 0 < y < self.height, (
+                f"Coordinates {(x, y)} are out of bounds."
+            )
 
             # text
             if isinstance(entity, Agent):

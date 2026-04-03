@@ -106,6 +106,7 @@ class raw_env(SimpleEnv, EzPickle):
         curriculum=False,
         terminate_on_success=False,
         observation_range=None,
+        visual_comm_range=None,
     ):
         assert observation_range is None or (
             isinstance(observation_range, float) and observation_range >= 0.0
@@ -122,11 +123,13 @@ class raw_env(SimpleEnv, EzPickle):
             curriculum=curriculum,
             terminate_on_success=terminate_on_success,
             observation_range=observation_range,
+            visual_comm_range=visual_comm_range,
         )
         scenario = Scenario(
             curriculum=curriculum,
             terminate_on_success=terminate_on_success,
             observation_range=observation_range,
+            visual_comm_range=visual_comm_range,
         )
         world = scenario.make_world(num_good, num_adversaries, num_obstacles)
         SimpleEnv.__init__(
@@ -178,11 +181,13 @@ class Scenario(BaseScenario):
         curriculum=False,
         terminate_on_success=False,
         observation_range=None,
+        visual_comm_range=None,
     ):
         self.curriculum = curriculum
         self.curriculum_stage = 0
         self.terminate_on_success = terminate_on_success
         self.observation_range = observation_range
+        self.visual_comm_range = visual_comm_range
 
     def advance_curriculum(self):
         """Move to the next curriculum stage. No-op at the final stage."""
@@ -230,9 +235,8 @@ class Scenario(BaseScenario):
             agent.collide = True
             agent.silent = True
             agent.size = 0.075 if agent.adversary else 0.05
-            agent.obs_range = (
-                self.observation_range
-            )  # every agents have the same obs range
+            agent.obs_range = self.observation_range  # every agents have the same obs range
+            agent.comm_range = self.visual_comm_range
             agent.accel = 3.0 if agent.adversary else 4.0
             agent.max_speed = 1.0 if agent.adversary else 1.3
         # add landmarks
@@ -409,6 +413,7 @@ class Scenario(BaseScenario):
             + other_pos
             + other_vel
         )
+
 
 def rang_pos(agent, others):
     """

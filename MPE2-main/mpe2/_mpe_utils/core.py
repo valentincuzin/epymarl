@@ -33,6 +33,7 @@ class Entity:  # properties and state of physical world entity
         # properties:
         self.size = 0.050
         self.obs_range = None
+        self.comm_range = None
         # entity can move / be pushed
         self.movable = False
         # entity collides with others

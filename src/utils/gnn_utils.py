@@ -4,6 +4,7 @@ import torch as th
 
 # PYG
 import torch_geometric as pyg
+from torch_geometric.nn.pool import radius_graph
 from torch_geometric.transforms import BaseTransform
 
 import networkx as nx
@@ -52,7 +53,7 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     else:
         if pos is None:
             raise RuntimeError("from_pos topology needs positions as input")
-        graphs.edge_index = pyg.nn.pool.radius_graph(graphs.pos, batch=graphs.batch, r=args.comm_range, loop=False)
+        graphs.edge_index = radius_graph(graphs.pos, batch=graphs.batch, r=args.comm_range, loop=False)
     graphs = graphs.to(x.device)
     # TODO: prove the improvment of this component
     # Add relative coordonate and distance in edge_attr in all the graph

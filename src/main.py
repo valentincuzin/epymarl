@@ -70,6 +70,38 @@ def _get_config(params, arg_name, subfolder):
         return config_dict
 
 
+
+def _hp_load(task: str, alg: str) -> dict:
+    """
+    load a hyper-parameters if it's was save, else raise FileNotFoundError
+
+    Args:
+        task (str):
+        alg (str):
+
+    Returns:
+        dict:
+    """
+    try:
+        tuned_path = os.path.join(
+                os.path.dirname(__file__),
+                "config",
+                "tuned",
+                task,
+                f"{alg}_best.yaml",
+            )
+        with open(tuned_path,"r") as f:
+            try:
+                config_dict = yaml.load(f, Loader=yaml.FullLoader)
+                config_dict["tuned_path"] = tuned_path
+            except yaml.YAMLError as exc:
+                assert False, "{}_best.yaml error: {}".format(alg, exc)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"No hyperparameter file found at {tuned_path}")
+    print("--- HYPER-PARAM ---\n\n", config_dict, '\n')
+    return config_dict
+
+
 def recursive_dict_update(d, u):
     for k, v in u.items():
         if isinstance(v, Mapping):
@@ -101,16 +133,20 @@ if __name__ == "__main__":
         except yaml.YAMLError as exc:
             assert False, "default.yaml error: {}".format(exc)
 
-    # Load algorithm and env base configs
-    env_config = _get_config(params, "--env-config", "envs")
-    alg_config = _get_config(params, "--config", "algs")
+    # Additionnal user params
     for _v in list(params):
         if _v.split("=")[0] == "--seed":
             seed = int(_v.split("=")[1])
             params.remove(_v)
-    config_dict["seed"] = seed
-    # config_dict = {**config_dict, **env_config, **alg_config}
+            config_dict["seed"] = seed
+        if _v.split("=")[0] == "--hp_search":
+            hp_search = int(_v.split("=")[1])
+            params.remove(_v)
+            config_dict["hp_search"] = hp_search
 
+    # Load algorithm and env base configs
+    env_config = _get_config(params, "--env-config", "envs")
+    alg_config = _get_config(params, "--config", "algs")
     config_dict = recursive_dict_update(config_dict, env_config)
     config_dict = recursive_dict_update(config_dict, alg_config)
 
@@ -119,14 +155,23 @@ if __name__ == "__main__":
     except:
         map_name = config_dict["env_args"]["key"]
 
-    # now add all the config to sacred
-    ex.add_config(config_dict)
-
     for param in params:
         if param.startswith("env_args.map_name"):
             map_name = param.split("=")[1]
         elif param.startswith("env_args.key"):
             map_name = param.split("=")[1]
+
+    if config_dict["hp_search"] == 0:
+        try:
+            hp_config = _hp_load(map_name, config_dict["name"])
+            config_dict = recursive_dict_update(config_dict, hp_config)
+        except FileNotFoundError as e:
+            print(f"WARNING: no tuned config found: {str(e)}...")
+
+
+    # now add all the config to sacred
+    ex.add_config(config_dict)
+
 
     # Save to disk by default for sacred
     logger.info("Saving to FileStorageObserver in results/sacred.")

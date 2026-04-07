@@ -34,6 +34,9 @@ def update_hp(study: Study, hp: dict, tuned_path: str) -> dict:
         print("    {}: {}".format(key, value))
         hp[key] = value
 
+    if hp["runner"] == "parallel":  # set the buffer size as the same than the batch size
+        hp["buffer_size"] = hp["batch_size"]
+
     with open(tuned_path, "w", encoding="utf-8") as fichier:
         yaml.dump(hp, fichier, indent=4)
 
@@ -64,7 +67,6 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     hp["tau"] = trial.suggest_categorical("tau", [0.001, 0.005, 0.01, 0.05, 0.1])
 
     hp["batch_size"] = trial.suggest_categorical("batch_size", [8, 16, 32, 64])
-    hp["batch_size_run"] = hp["batch_size"]
     hp["buffer_size"] = hp["batch_size"]
 
     hp["q_nstep"] = trial.suggest_categorical("q_nstep", [1, 5, 10, 15, 20])

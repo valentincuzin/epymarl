@@ -6,7 +6,6 @@ mask_before_softmax: True
 runner: "parallel"
 
 buffer_size: 10
-batch_size_run: 10
 batch_size: 10
 
 # update the target network every {} training steps

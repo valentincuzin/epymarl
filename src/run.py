@@ -33,14 +33,11 @@ def _objective(trial, args_dict, _log):
     param = hp_mappo_settings(trial, param)
     param = hp_mlp_settings(trial, param)
     param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
-    param["t_max"] = int(param["t_max"]/200)  # we only tune for fast learning
+    param["t_max"] = int(param["t_max"]/2)  # we only tune for fast learning
     param["test_interval"] = int(param["t_max"]*2)  # no need for test
-    param["save_model"] = False  # no need for save
+    param["save_model"] = False  # no need to save
     hp_args = SN(**param)
     hp_logger = Logger(_log)
-    _log.info("--- HP SEARCH Experiment Parameters ---")
-    experiment_params = pprint.pformat(param, indent=4, width=1)
-    _log.info("\n\n" + experiment_params + "\n")
 
     run_sequential(args=hp_args, logger=hp_logger)
     return int(np.mean([ rt[1] for rt in hp_logger.stats["return_mean"]]))
@@ -310,7 +307,7 @@ def run_sequential(args, logger):
                         os.path.join(save_path, f), os.path.join(wandb_save_dir, f)
                     )
 
-        episode += args.batch_size_run
+        episode += args.batch_size
 
         if (runner.t_env - last_log_T) >= args.log_interval:
             logger.log_stat("episode", episode, runner.t_env)
@@ -335,11 +332,11 @@ def args_sanity_check(config, _log):
             "CUDA flag use_cuda was switched OFF automatically because no CUDA devices are available!"
         )
 
-    if config["test_nepisode"] < config["batch_size_run"]:
-        config["test_nepisode"] = config["batch_size_run"]
+    if config["test_nepisode"] < config["batch_size"]:
+        config["test_nepisode"] = config["batch_size"]
     else:
         config["test_nepisode"] = (
-            config["test_nepisode"] // config["batch_size_run"]
-        ) * config["batch_size_run"]
+            config["test_nepisode"] // config["batch_size"]
+        ) * config["batch_size"]
 
     return config

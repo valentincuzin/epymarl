@@ -14,7 +14,7 @@ class ParallelRunner:
     def __init__(self, args, logger):
         self.args = args
         self.logger = logger
-        self.batch_size = self.args.batch_size_run
+        self.batch_size = self.args.batch_size
 
         # Make subprocesses for the envs
         self.parent_conns, self.worker_conns = zip(

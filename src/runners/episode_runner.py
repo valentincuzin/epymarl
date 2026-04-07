@@ -11,7 +11,7 @@ class EpisodeRunner:
     def __init__(self, args, logger):
         self.args = args
         self.logger = logger
-        self.batch_size = self.args.batch_size_run
+        self.batch_size = self.args.batch_size
         assert self.batch_size == 1
 
         # registering both smac and smacv2 causes a pysc2 error

@@ -9,9 +9,16 @@ class MLPAgent(nn.Module):
         super(MLPAgent, self).__init__()
         self.args = args
 
-        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        self.fc2 = nn.Linear(args.hidden_dim, args.hidden_dim)
-        self.fc3 = nn.Linear(args.hidden_dim, args.n_actions)
+        self.fc_layers = []
+        for n in range(args.n_layers):
+            self.fc_layers.append(nn.Linear(input_shape, args.hidden_dim))
+            self.fc_layers.append(nn.ReLU())
+            if args.layer_norm:
+                self.fc_layers.append(nn.LayerNorm(args.hidden_dim))
+            input_shape = args.hidden_dim
+        self.base = nn.Sequential(*self.fc_layers)
+        self.act_prob = nn.Linear(args.hidden_dim, args.n_actions)
+        print(self)
         print(f"\n\nDEBUG: total number of PARAMETERS for MLPAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     def init_hidden(self):
@@ -20,8 +27,6 @@ class MLPAgent(nn.Module):
         return param.new_zeros(1, self.args.hidden_dim)
 
     def forward(self, inputs, hidden_state=None):
-        x = F.relu(self.fc1(inputs))
-        h = F.relu(self.fc2(x))
-        q = self.fc3(h)
+        h = self.base(inputs)
+        q = self.act_prob(h)
         return q, None
-

@@ -89,8 +89,8 @@ def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 1, 4)
+    hp["n_layers"] = trial.suggest_int("n_layers", 1, 3)
     hp["hidden_dim"] = trial.suggest_int("hidden_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [True, False])
-    
+
     return hp

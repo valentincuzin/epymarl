@@ -18,7 +18,6 @@ class MLPAgent(nn.Module):
             input_shape = args.hidden_dim
         self.base = nn.Sequential(*self.fc_layers)
         self.act_prob = nn.Linear(args.hidden_dim, args.n_actions)
-        print(self)
         print(f"\n\nDEBUG: total number of PARAMETERS for MLPAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     def init_hidden(self):

@@ -1,3 +1,4 @@
+from copy import deepcopy
 import datetime
 import os
 from os.path import dirname, abspath
@@ -8,6 +9,7 @@ import threading
 from types import SimpleNamespace as SN
 
 import torch as th
+import numpy as np
 
 from controllers import REGISTRY as mac_REGISTRY
 from components.episode_buffer import ReplayBuffer
@@ -18,23 +20,55 @@ from utils.general_reward_support import test_alg_config_supports_reward
 from utils.logging import Logger
 from utils.timehelper import time_left, time_str
 
+from functools import partial
+import copy
+import optuna
+# from multiprocessing import Pool
+from optuna.storages import JournalStorage
+from optuna.storages.journal import JournalFileBackend
+from utils.hp import hp_mappo_settings, hp_mlp_settings, update_hp
 
+def _objective(trial, args_dict, _log):
+    param = copy.deepcopy(args_dict)
+    param = hp_mappo_settings(trial, param)
+    param = hp_mlp_settings(trial, param)
+    param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
+    param["t_max"] = int(param["t_max"]/200)  # we only tune for fast learning
+    param["test_interval"] = int(param["t_max"]*2)  # no need for test
+    param["save_model"] = False  # no need for save
+    hp_args = SN(**param)
+    hp_logger = Logger(_log)
+    _log.info("--- HP SEARCH Experiment Parameters ---")
+    experiment_params = pprint.pformat(param, indent=4, width=1)
+    _log.info("\n\n" + experiment_params + "\n")
+
+    run_sequential(args=hp_args, logger=hp_logger)
+    return int(np.mean([ rt[1] for rt in hp_logger.stats["return_mean"]]))
+
+def _run_optim(args_dict, _log, _=None):
+    sampler = optuna.samplers.TPESampler(
+        multivariate=True, warn_independent_sampling=False, seed=42
+    )
+    study = optuna.create_study(
+        study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
+        storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
+        load_if_exists=True,
+        sampler=sampler,
+        pruner=optuna.pruners.HyperbandPruner(),
+        direction="maximize",
+    )
+    obj = partial(_objective, args_dict=args_dict, _log=_log)
+    study.optimize(obj, n_trials=args_dict["hp_search"], n_jobs=1)
+    
 def run(_run, _config, _log):
     # check args sanity
     _config = args_sanity_check(_config, _log)
 
     args = SN(**_config)
     args.device = "cuda" if args.use_cuda else "cpu"
-    assert test_alg_config_supports_reward(
-        args
-    ), "The specified algorithm does not support the general reward setup. Please choose a different algorithm or set `common_reward=True`."
-
-    # setup loggers
-    logger = Logger(_log)
-
-    _log.info("Experiment Parameters:")
-    experiment_params = pprint.pformat(_config, indent=4, width=1)
-    _log.info("\n\n" + experiment_params + "\n")
+    assert test_alg_config_supports_reward(args), (
+        "The specified algorithm does not support the general reward setup. Please choose a different algorithm or set `common_reward=True`."
+    )
 
     # configure tensorboard logger
     # unique_token = "{}__{}".format(args.name, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
@@ -48,6 +82,26 @@ def run(_run, _config, _log):
     )
 
     args.unique_token = unique_token
+    args_dict = vars(args)
+    if args.hp_search != 0:
+        run_optim = partial(_run_optim, args_dict=args_dict, _log=_log)
+        run_optim()
+
+        study = optuna.load_study(
+            f"{args.hp_search} search for {args.unique_token}",
+            JournalStorage(JournalFileBackend(file_path="./journal.log")),
+        )
+        args_dict = update_hp(
+            study, args_dict, f"src/config/tuned/{map_name}/{args.name}_best.yaml"
+        )
+        args = SN(**args_dict)
+
+    # setup loggers
+    logger = Logger(_log)
+    _log.info("Experiment Parameters:")
+    experiment_params = pprint.pformat(_config, indent=4, width=1)
+    _log.info("\n\n" + experiment_params + "\n")
+
     if args.use_tensorboard:
         tb_logs_direc = os.path.join(
             dirname(dirname(abspath(__file__))), "results", "tb_logs"
@@ -262,6 +316,11 @@ def run_sequential(args, logger):
             logger.log_stat("episode", episode, runner.t_env)
             logger.print_recent_stats()
             last_log_T = runner.t_env
+        if hasattr(args, "trial"):
+            args.trial.report(logger.stats["episode"][-1]["return_mean"], runner.t_env)
+            # Handle pruning based on the intermediate value.
+            if args.trial.should_prune():
+                raise optuna.TrialPruned()
 
     runner.close_env()
     logger.console_logger.info("Finished Training")

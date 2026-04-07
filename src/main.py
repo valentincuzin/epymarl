@@ -99,6 +99,7 @@ def _hp_load(task: str, alg: str) -> dict:
     except FileNotFoundError:
         raise FileNotFoundError(f"No hyperparameter file found at {tuned_path}")
     print("--- HYPER-PARAM ---\n\n", config_dict, '\n')
+    config_dict["hp_search"] = 0
     return config_dict
 
 

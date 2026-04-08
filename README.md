@@ -2,20 +2,43 @@
 
 This repo based on EPyMARL intend to implement and test new communication model based on GNNs.
 
-1. Add mp4 visualization record on one env of training
+1. ~~Add mp4 visualization record on one env of training~~
 2. Add visualization of the dynamic graphs at least in test
-3. Add good name handler in wandb + in config.yaml files
+3. ~~Add good name handler in wandb + in config.yaml files~~
 3. Extensive test on my models (3 seeds) for week prof of my intuition
 
 
+## Installation process
 
+I just paste all my command for installing the same python env:
 
+```sh
+conda create -n p313 swig python=3.13.12
+conda activate p313
+```
 
+```sh
+pip install torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 --index-url https://download.pytorch.org/whl/cu130
 
+pip install torch_geometric
 
+pip install pyg_lib torch_scatter torch_sparse torch_cluster -f https://data.pyg.org/whl/torch-2.10.0+cu130.html
+```
 
+```sh
+pip install -r requirements.txt
+pip install -r  env_requirements.txt
+```
 
+```sh
+pip install -e MPE2-main/
+```
 
+```sh
+kaleido_get_chrome
+```
+
+---
 
 
 

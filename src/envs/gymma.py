@@ -59,7 +59,7 @@ class GymmaWrapper(MultiAgentEnv):
                     print("starting record video...")
                     return True
                 return False
-            self._env = RecordVideo(self._env, video_folder="results/videos/", name_prefix=self.prefix_video, step_trigger=step_trigger)
+            self._env = RecordVideo(self._env, video_folder=f"results/videos/{self.prefix_video}", step_trigger=step_trigger)
         
         self._env = TimeLimit(self._env, max_episode_steps=time_limit)
         self._env = FlattenObservation(self._env)

@@ -11,6 +11,9 @@ import sys
 import yaml
 
 import numpy as np
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 from sacred import SETTINGS
 SETTINGS["CAPTURE_MODE"] = (
     "no"  # set to "no" if you want to see stdout/stderr in console

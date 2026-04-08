@@ -23,7 +23,7 @@ from utils.timehelper import time_left, time_str
 from functools import partial
 import copy
 import optuna
-# from multiprocessing import Pool
+from multiprocessing import Pool
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
 from utils.hp import hp_mappo_settings, hp_mlp_settings, update_hp
@@ -33,16 +33,17 @@ def _objective(trial, args_dict, _log):
     param = hp_mappo_settings(trial, param)
     param = hp_mlp_settings(trial, param)
     param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
-    param["t_max"] = int(param["t_max"]/2)  # we only tune for fast learning
-    param["test_interval"] = int(param["t_max"]*2)  # no need for test
+    param["test_interval"] = param["t_max"]  # no need for test
+    param["t_max"] = param["t_max"]//2  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     hp_args = SN(**param)
     hp_logger = Logger(_log)
 
     run_sequential(args=hp_args, logger=hp_logger)
-    return int(np.mean([ rt[1] for rt in hp_logger.stats["return_mean"]]))
+    # we return the 75% last time_step mean of the return mean curve
+    return int(np.mean([ rt[1] for rt in hp_logger.stats["return_mean"][param["t_max"]//4:]]))
 
-def _run_optim(args_dict, _log, _=None):
+def _run_optim(args_dict, _log):
     sampler = optuna.samplers.TPESampler(
         multivariate=True, warn_independent_sampling=False, seed=42
     )
@@ -55,7 +56,8 @@ def _run_optim(args_dict, _log, _=None):
         direction="maximize",
     )
     obj = partial(_objective, args_dict=args_dict, _log=_log)
-    study.optimize(obj, n_trials=args_dict["hp_search"], n_jobs=1)
+    study.optimize(obj, n_trials=args_dict["hp_search"], n_jobs=1, show_progress_bar=True)
+    return study
     
 def run(_run, _config, _log):
     # check args sanity
@@ -81,13 +83,11 @@ def run(_run, _config, _log):
     args.unique_token = unique_token
     args_dict = vars(args)
     if args.hp_search != 0:
-        run_optim = partial(_run_optim, args_dict=args_dict, _log=_log)
-        run_optim()
-
-        study = optuna.load_study(
-            f"{args.hp_search} search for {args.unique_token}",
-            JournalStorage(JournalFileBackend(file_path="./journal.log")),
-        )
+        study = _run_optim(args_dict=args_dict, _log=_log)
+        # study = optuna.load_study(
+        #     f"{args.hp_search} search for {args.unique_token}",
+        #     JournalStorage(JournalFileBackend(file_path="./journal.log")),
+        # )
         args_dict = update_hp(
             study, args_dict, f"src/config/tuned/{map_name}/{args.name}_best.yaml"
         )

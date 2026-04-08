@@ -69,12 +69,9 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     hp["batch_size"] = trial.suggest_categorical("batch_size", [8, 16, 32, 64])
     hp["buffer_size"] = hp["batch_size"]
 
-    hp["q_nstep"] = trial.suggest_categorical("q_nstep", [1, 5, 10, 15, 20])
-    hp["epochs"] = trial.suggest_categorical("epochs", [5, 10, 15, 20])
+    hp["q_nstep"] = trial.suggest_int("q_nstep", 1, 20, log=True)
+    hp["epochs"] = trial.suggest_int("epochs", 5, 20, step=5)
     hp["eps_clip"] = trial.suggest_float("eps_clip", 0.01, 0.3, log=True)
-
-    hp["obs_agent_id"] = trial.suggest_categorical("obs_agent_id", [True, False])
-    hp["obs_last_action"] = trial.suggest_categorical("obs_last_action", [True, False])
 
     return hp
 

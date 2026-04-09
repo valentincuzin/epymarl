@@ -235,7 +235,9 @@ class Scenario(BaseScenario):
             agent.collide = True
             agent.silent = True
             agent.size = 0.075 if agent.adversary else 0.05
-            agent.obs_range = self.observation_range  # every agents have the same obs range
+            agent.obs_range = (
+                self.observation_range
+            )  # every agents have the same obs range
             agent.comm_range = self.visual_comm_range
             agent.accel = 3.0 if agent.adversary else 4.0
             agent.max_speed = 1.0 if agent.adversary else 1.3
@@ -382,40 +384,28 @@ class Scenario(BaseScenario):
         """
         # Landmarks ---
         non_boundary_landmarks = [e for e in world.landmarks if not e.boundary]
-        entity_pos = rang_pos(agent, non_boundary_landmarks)
+        entity_pos = range_pos(agent, non_boundary_landmarks)
 
         # Other agents ---
         others = [other for other in world.agents if other is not agent]
 
         if self.observation_range is None:
             # Full observability
-            other_pos = [o.state.p_pos - agent.state.p_pos for o in others]
-            other_vel = [o.state.p_vel for o in others if not o.adversary]
+            others_info = get_others_infos(agent, others)
         else:
             # Partial observability
+            others_info = get_others_infos_po(agent, others)
 
-            # other_pos = padded_relative_positions(
-            #     agent, others, self.observation_range
-            # )
-            # other_vel = padded_velocities(
-            #     agent,
-            #     others,
-            #     self.observation_range,
-            #     predicate=lambda e: not e.adversary,
-            # )
-
-            other_pos, other_vel = rang_pos_vels(agent, others)
-
-        return np.concatenate(
-            [agent.state.p_vel]
-            + [agent.state.p_pos]
+        local_obs = np.concatenate(
+            [agent.state.p_pos]
+            + [agent.state.p_vel]
             + entity_pos
-            + other_pos
-            + other_vel
+            + others_info
         )
+        return local_obs
 
 
-def rang_pos(agent, others):
+def range_pos(agent, others):
     """
     Get other positions and velocities
     if there are in the observation range of the agent.
@@ -429,23 +419,32 @@ def rang_pos(agent, others):
             positions.append(np.zeros(2))
     return positions
 
-
-def rang_pos_vels(agent, others):
+def get_others_infos(agent, others):
     """
     Get other positions and velocities
     if there are in the observation range of the agent.
     """
-    positions = []
-    velocities = []
+    others_info = []
+    for other in others:
+        others_info.append([-1 if other.adversary else 1])  # type
+        others_info.append(other.state.p_pos - agent.state.p_pos)  # relative pos
+        others_info.append(other.state.p_vel.copy())  # velocity
+    return others_info
+
+def get_others_infos_po(agent, others):
+    """
+    Get other positions and velocities
+    if there are in the observation range of the agent.
+    """
+    others_info = []
     for other in others:
         euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
-        if euclidean_dist <= agent.obs_range:
-            positions.append(other.state.p_pos - agent.state.p_pos)
-            if not other.adversary:  # it's a prey
-                velocities.append(other.state.p_vel.copy())
-            else:
-                velocities.append(np.zeros(2))
+        visible = euclidean_dist <= agent.obs_range
+        if visible:
+            others_info.append([1])  # visible
+            others_info.append([-1 if other.adversary else 1])  # type
+            others_info.append(other.state.p_pos - agent.state.p_pos)  # relative pos
+            others_info.append(other.state.p_vel.copy())  # velocity
         else:
-            positions.append(np.zeros(2))
-            velocities.append(np.zeros(2))
-    return positions, velocities
+            others_info.append(np.zeros(6))
+    return others_info

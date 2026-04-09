@@ -9,8 +9,9 @@ from torch_geometric.transforms import BaseTransform
 
 import networkx as nx
 import matplotlib.pyplot as plt
-from itertools import count
-# create a global list of Data to store maximum max_cycles of snapshot
+
+import imageio
+import glob
 
 def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     if isinstance(x, list):
@@ -65,12 +66,9 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     # Create relative velocity
     if vel is not None:
         graphs = _RelVel()(graphs)
-
-    # if current_t % args.test_interval == 0:  # TODO faire remonter le current_t ou placer ça ailleur
-        # _print_graph(graphs, batch_size, args)
     return graphs
 
-def _print_graph(graphs: pyg.data.Batch, batch_size: int, args):
+def print_graph(graphs: pyg.data.Batch, batch_size: int, t: int, args):
     # retrive only the first graphs batch and create a Data object
     graph = pyg.data.Data()
     graph.x = graphs.x.view(batch_size, args.n_agents, graphs.x.shape[-1])[0, ...]
@@ -81,7 +79,16 @@ def _print_graph(graphs: pyg.data.Batch, batch_size: int, args):
     G = pyg.utils.to_networkx(graph)
     colors = [n for n in G.nodes()]
     nx.draw(G, graph.pos.cpu().numpy(), node_size=20, arrowsize=5, node_color=colors)
-    plt.savefig(f"results/graphs/{args.unique_token}.png")
+    plt.savefig(f"results/graphs/{args.unique_token}-{t}.png")
+    plt.clf()
+    plt.close()
+    
+def create_gif(unique_token):
+
+    images = sorted(glob.glob(f"results/graphs/{unique_token}-*.png"))
+    frames = [imageio.imread(p) for p in images]
+    imageio.mimsave(f'results/graphs/{unique_token}.gif', frames, duration=0.0004)
+
 
 
 def _get_pos_from_x(x: th.Tensor, task_name: str):

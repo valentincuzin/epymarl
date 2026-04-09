@@ -5,13 +5,14 @@ import torch.nn.functional as F
 
 from torch_geometric.nn import GATv2Conv, MessagePassing
 
-from utils.gnn_utils import batch_from_dense_to_ptg
+from utils.gnn_utils import batch_from_dense_to_ptg, print_graph, create_gif
 
 class GNNAgent(nn.Module):
     def __init__(self, input_shape, args):
         super(GNNAgent, self).__init__()
         self.args = args
-
+        self.counter = 0
+        self.reset = False
         self.fc1 = nn.Linear(input_shape, args.hidden_dim)
         # comm modules:
         self.gnns: MessagePassing  = GATv2Conv(args.hidden_dim, 2*args.hidden_dim, edge_dim=5)
@@ -22,21 +23,31 @@ class GNNAgent(nn.Module):
     def init_hidden(self):
         # make hidden states on same device as model
         param = next(self.parameters())
+        self.reset = True
         return param.new_zeros(1, 2*self.args.hidden_dim)
     
-    def forward(self, inputs, hidden_state=None):
+    def forward(self, inputs, hidden_state=None, test_mode=None):
         x = F.relu(self.fc1(inputs))
-        h = F.relu(self._communication_process(inputs, x))
+        h = F.relu(self._communication_process(inputs, x, test_mode))
         q = self.fc3(h)
         return q, None
     
-    def _communication_process(self, raw_inputs, x):
-        graphs = self._select_communication(raw_inputs)
+    def _communication_process(self, raw_inputs, x, test_mode):
+        graphs = self._select_communication(raw_inputs, test_mode)
         graphs.x = x
         h = self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr)
 
         return h
 
-    def _select_communication(self, x):
+    def _select_communication(self, x, test_mode):
         graphs = batch_from_dense_to_ptg(x, self.args.batch_size, self.args)
+        if self.reset and self.counter != 0:
+            self.counter = 0
+            self.reset = False
+            create_gif(self.args.unique_token)
+        if test_mode or self.counter != 0:
+            self.counter += 1
+            print("printing graphs ! ", test_mode, self.counter)
+            print_graph(graphs, self.args.batch_size, self.counter, self.args)
+        
         return graphs

@@ -21,7 +21,14 @@ try:
     from .mpe2_wrapper import MPE2Wrapper  # noqa
 except ImportError:
     warnings.warn(
-        "PettingZoo is not installed, so these environments will not be available! To install, run `pip install pettingzoo`"
+        "MPE2 is not installed, so these environments will not be available!"
+    )
+
+try:
+    from .ic3net_wrapper import IC3NetWrapper  # noqa
+except ImportError:
+    warnings.warn(
+        "IC3Net is not installed, so these environments will not be available!"
     )
 
 try:

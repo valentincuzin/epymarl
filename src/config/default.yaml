@@ -10,14 +10,14 @@ env_args: {
   num_adversaries: 10,
   num_obstacles: 0,
   max_cycles: 50,
-  observation_range: 0.25,
-  visual_comm_range: 0.5,
+  # observation_range: 0.25,
+  # visual_comm_range: 0.5,
   dynamic_rescaling: True,
   render_mode: 'rgb_array',
 } # Arguments for the environment
 
 # --- Communication Constraint ---
-comm_range: 0.5
+comm_range: 0.0
 
 use_cuda: True # Use gpu by default unless it isn't available
 buffer_cpu_only: False # If true we won't keep all of the replay buffer in vram
@@ -43,8 +43,8 @@ local_results_path: "results" # Path for local results
 gamma: 0.99
 optim_alpha: 0.99 # RMSProp alpha
 optim_eps: 0.00005 # RMSProp epsilon
-grad_norm_clip: 10 # Reduce magnitude of gradients above this L2 norm
-add_value_last_step: True
+grad_norm_clip: 5 # Reduce magnitude of gradients above this L2 norm
+add_value_last_step: False
 
 # --- Experiment running params ---
 hp_search: 0

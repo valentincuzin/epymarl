@@ -13,14 +13,27 @@ class GnnRnnAgent(nn.Module):
         super(GnnRnnAgent, self).__init__()
         self.args = args
 
-        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
+        self.fc_layers = []
+        for n in range(args.n_layers):
+            self.fc_layers.append(nn.Linear(input_shape, args.hidden_dim))
+            self.fc_layers.append(nn.ReLU())
+            if args.layer_norm:
+                self.fc_layers.append(nn.LayerNorm(args.hidden_dim))
+            input_shape = args.hidden_dim
+        self.base = nn.Sequential(*self.fc_layers)
 
         # comm modules:
-        self.gnns: MessagePassing  = GATv2Conv(args.hidden_dim, args.hidden_dim, edge_dim=5)
-        self.rnn = nn.GRUCell(args.hidden_dim+args.hidden_dim, 2*args.hidden_dim)
+        self.gnns: MessagePassing = GATv2Conv(args.hidden_dim, 
+                                              2*args.hidden_dim, 
+                                              edge_dim=3,
+                                              residual=True)
+        self.rnn = nn.GRUCell(2*args.hidden_dim, 2*args.hidden_dim)
 
-        self.fc2 = nn.Linear(2*args.hidden_dim, args.n_actions)
-        print(f"\n\nDEBUG: total number of PARAMETERS for GnnRnnAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
+        self.act_prob = nn.Sequential(
+            nn.LayerNorm(2*args.hidden_dim) if args.layer_norm else [],
+            nn.Linear(2*args.hidden_dim, args.n_actions)
+        )
+        print(f"\n--- GnnRnnAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n", self, "\n\n")
 
     def init_hidden(self):
         # make hidden states on same device as model
@@ -28,18 +41,18 @@ class GnnRnnAgent(nn.Module):
         return param.new_zeros(1, 2*self.args.hidden_dim)
 
     def forward(self, inputs, hidden_states):
-        x = F.relu(self.fc1(inputs))
+        x = self.base(inputs)
         h = self._communication_process(inputs, x, hidden_states)
-        q = self.fc2(h)
+        q = self.act_prob(h)
         return q, h
 
     def _communication_process(self, inputs, x, hidden_states):
         graphs = self._select_communication(inputs)
         graphs.x = x
         h = F.relu(self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr))
-        h = th.cat(  # skip connection like CD-GCN does
-                (h, x), dim=1
-            )
+        # h = th.cat(  # skip connection like CD-GCN does
+        #         (h, x), dim=1
+        #     )
         h_in = hidden_states.reshape(-1, 2*self.args.hidden_dim)
         h = self.rnn(h, h_in)
         return h

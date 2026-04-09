@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --job-name=mappo    # Nom du job
-#SBATCH --output=mappo_%j.log   # Standard output et error log
+#SBATCH --job-name=mappo-po-v2    # Nom du job
+#SBATCH --output=mappo-po-v2_%j.log   # Standard output et error log
 
 #SBATCH --gres=gpu:1              # Number of GPUs
 #SBATCH --cpus-per-task=1             # Utiliser un seul CPU pour cette tâche (job)
 #SBATCH --mem=32G                  # Size of cpu memory
-#SBATCH --time=2-00:00:00         # Max duration days-hours:minutes:seconds
+#SBATCH --time=0-20:00:00         # Max duration days-hours:minutes:seconds
 
 #SBATCH --mail-user=valentin.cuzin-rambaud@etu.univ-lyon1.fr  # Where to send mail
 #SBATCH --mail-type=FAIL          # Événements déclencheurs (NONE, BEGIN, END, FAIL, ALL)

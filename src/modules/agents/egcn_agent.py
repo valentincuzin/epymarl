@@ -16,21 +16,28 @@ class EGCNAgent(nn.Module):
         super(EGCNAgent, self).__init__()
         self.args = args
 
-        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
+        self.fc_layers = []
+        for n in range(args.n_layers):
+            self.fc_layers.append(nn.Linear(input_shape, args.hidden_dim))
+            self.fc_layers.append(nn.ReLU())
+            if args.layer_norm:
+                self.fc_layers.append(nn.LayerNorm(args.hidden_dim))
+            input_shape = args.hidden_dim
+        self.base = nn.Sequential(*self.fc_layers)
         # comm modules:
         egcn_args = Namespace(
             {
                 "feats_per_node": args.hidden_dim,
                 "layer_1_feats": 2*args.hidden_dim,
-                # "layer_2_feats": args.hidden_dim,
             }
         )
         self.egcns = EGCN(egcn_args, activation=nn.ReLU(), skipfeats=True)
 
-        self.fc2 = nn.Linear(2*args.hidden_dim+args.hidden_dim, args.n_actions)
-        print(
-            f"\n\nDEBUG: total number of PARAMETERS for EGCNAgent: {sum(p.numel() for p in self.parameters())} #####\n\n"
+        self.act_prob = nn.Sequential(
+            nn.LayerNorm(2*args.hidden_dim+args.hidden_dim) if args.layer_norm else [],
+            nn.Linear(2*args.hidden_dim+args.hidden_dim, args.n_actions)
         )
+        print(f"\n--- EGCNAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n", self, "\n\n")
 
     def init_hidden(self):
         # make hidden states on same device as model
@@ -38,9 +45,64 @@ class EGCNAgent(nn.Module):
         return param.new_zeros(1, self.args.hidden_dim)
 
     def forward(self, inputs, hidden_states):
-        x = F.relu(self.fc1(inputs))
+        x = self.base(inputs)
         h = self._communication_process(inputs, x)
-        q = self.fc2(h)
+        q = self.act_prob(h)
+        return q, h
+
+    def _communication_process(self, inputs, x):
+        graphs = self._select_communication(inputs)
+        graphs.x = x
+        dense_adj = to_dense_adj(
+            graphs.edge_index,
+            max_num_nodes=graphs.max_num_nodes,
+        ).squeeze()
+        h = self.egcns(dense_adj, graphs.x)
+        return h
+
+    def _select_communication(self, x):
+        graphs = batch_from_dense_to_ptg(x, self.args.batch_size, self.args)
+        return graphs
+    
+
+class EGCNAgentV2(nn.Module):
+    def __init__(self, input_shape, args):
+        super(EGCNAgentV2, self).__init__()
+        self.args = args
+
+        self.fc_layers = []
+        for n in range(args.n_layers):
+            self.fc_layers.append(nn.Linear(input_shape, args.hidden_dim))
+            self.fc_layers.append(nn.ReLU())
+            if args.layer_norm:
+                self.fc_layers.append(nn.LayerNorm(args.hidden_dim))
+            input_shape = args.hidden_dim
+        self.base = nn.Sequential(*self.fc_layers)
+        # comm modules:
+        egcn_args = Namespace(
+            {
+                "feats_per_node": args.hidden_dim,
+                "layer_1_feats": 2*args.hidden_dim,
+                "layer_2_feats": 2*args.hidden_dim,
+            }
+        )
+        self.egcns = EGCN(egcn_args, activation=nn.ReLU(), skipfeats=True)
+
+        self.act_prob = nn.Sequential(
+            nn.LayerNorm(2*args.hidden_dim+args.hidden_dim) if args.layer_norm else [],
+            nn.Linear(2*args.hidden_dim+args.hidden_dim, args.n_actions)
+        )
+        print(f"\n--- EGCNAgentV2 {sum(p.numel() for p in self.parameters())} parameters --- \n\n", self, "\n\n")
+
+    def init_hidden(self):
+        # make hidden states on same device as model
+        param = next(self.parameters())
+        return param.new_zeros(1, self.args.hidden_dim)
+
+    def forward(self, inputs, hidden_states):
+        x = self.base(inputs)
+        h = self._communication_process(inputs, x)
+        q = self.act_prob(h)
         return q, h
 
     def _communication_process(self, inputs, x):

@@ -71,7 +71,7 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
 
     hp["q_nstep"] = trial.suggest_int("q_nstep", 1, 20, log=True)
     hp["epochs"] = trial.suggest_int("epochs", 5, 20, step=5)
-    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.01, 0.3, log=True)
+    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.05, 0.3, log=True)
 
     return hp
 

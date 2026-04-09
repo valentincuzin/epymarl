@@ -34,25 +34,28 @@ def _objective(trial, args_dict, _log):
     param = hp_mlp_settings(trial, param)
     param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
     param["test_interval"] = param["t_max"]  # no need for test
-    param["t_max"] = param["t_max"]//2  # we only tune for fast learning
+    param["t_max"] = int(param["t_max"]/2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
+    param["trial"] = trial  # for trial.prunning
     hp_args = SN(**param)
     hp_logger = Logger(_log)
 
     run_sequential(args=hp_args, logger=hp_logger)
     # we return the 75% last time_step mean of the return mean curve
-    return int(np.mean([ rt[1] for rt in hp_logger.stats["return_mean"][param["t_max"]//4:]]))
+    start = int(len(hp_logger.stats["return_mean"]) * 0.25)
+    return int(np.mean([ rt[1] for rt in hp_logger.stats["return_mean"][start:]]))
 
 def _run_optim(args_dict, _log):
     sampler = optuna.samplers.TPESampler(
         multivariate=True, warn_independent_sampling=False, seed=42
     )
+    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=2)
     study = optuna.create_study(
         study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
         load_if_exists=True,
         sampler=sampler,
-        pruner=optuna.pruners.HyperbandPruner(),
+        pruner=pruner,
         direction="maximize",
     )
     obj = partial(_objective, args_dict=args_dict, _log=_log)
@@ -314,7 +317,7 @@ def run_sequential(args, logger):
             logger.print_recent_stats()
             last_log_T = runner.t_env
         if hasattr(args, "trial"):
-            args.trial.report(logger.stats["episode"][-1]["return_mean"], runner.t_env)
+            args.trial.report(int(logger.stats["episode"][-1]["return_mean"]), runner.t_env)
             # Handle pruning based on the intermediate value.
             if args.trial.should_prune():
                 raise optuna.TrialPruned()

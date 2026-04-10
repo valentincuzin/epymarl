@@ -389,12 +389,7 @@ class Scenario(BaseScenario):
         # Other agents ---
         others = [other for other in world.agents if other is not agent]
 
-        if self.observation_range is None:
-            # Full observability
-            others_info = get_others_infos(agent, others)
-        else:
-            # Partial observability
-            others_info = get_others_infos_po(agent, others)
+        others_info = get_others_infos(agent, others, self.observation_range)
 
         local_obs = np.concatenate(
             [agent.state.p_pos]
@@ -419,32 +414,22 @@ def range_pos(agent, others):
             positions.append(np.zeros(2))
     return positions
 
-def get_others_infos(agent, others):
+def get_others_infos(agent, others, observation_range):
     """
     Get other positions and velocities
     if there are in the observation range of the agent.
     """
     others_info = []
     for other in others:
-        others_info.append([-1 if other.adversary else 1])  # type
-        others_info.append(other.state.p_pos - agent.state.p_pos)  # relative pos
-        others_info.append(other.state.p_vel.copy())  # velocity
-    return others_info
 
-def get_others_infos_po(agent, others):
-    """
-    Get other positions and velocities
-    if there are in the observation range of the agent.
-    """
-    others_info = []
-    for other in others:
-        euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
-        visible = euclidean_dist <= agent.obs_range
-        if visible:
-            others_info.append([1])  # visible
+        if observation_range is not None:
+            euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
+            visible = euclidean_dist <= agent.obs_range
+
+        if visible or observation_range is None:
             others_info.append([-1 if other.adversary else 1])  # type
             others_info.append(other.state.p_pos - agent.state.p_pos)  # relative pos
             others_info.append(other.state.p_vel.copy())  # velocity
         else:
-            others_info.append(np.zeros(6))
+            others_info.append(np.zeros(5))
     return others_info

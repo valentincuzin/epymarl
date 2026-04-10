@@ -41,8 +41,8 @@ def _objective(trial, args_dict, _log):
     hp_logger = Logger(_log)
 
     run_sequential(args=hp_args, logger=hp_logger)
-    # we return the 75% last time_step mean of the return mean curve
-    start = int(len(hp_logger.stats["return_mean"]) * 0.25)
+    # we return the 25% last time_step mean of the return mean curve
+    start = int(len(hp_logger.stats["return_mean"]) * 0.75)
     return int(np.mean([ rt[1] for rt in hp_logger.stats["return_mean"][start:]]))
 
 def _run_optim(args_dict, _log):

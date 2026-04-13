@@ -25,11 +25,14 @@ import copy
 import optuna
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
-from utils.hp import hp_mappo_settings, hp_mlp_settings, update_hp
+from utils.hp import hp_mappo_settings, hp_mappo_v2_settings, hp_mlp_settings, update_hp
 
 def _objective(trial, args_dict, _log):
     param = copy.deepcopy(args_dict)
-    param = hp_mappo_settings(trial, param)
+    if param["name"].contain("mappo_v2"):
+        param = hp_mappo_v2_settings(trial, param)
+    else:
+        param = hp_mappo_settings(trial, param)
     param = hp_mlp_settings(trial, param)
     param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
     param["t_max"] = int(param["t_max"]/2)  # we only tune for fast learning

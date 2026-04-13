@@ -29,7 +29,7 @@ from utils.hp import hp_mappo_settings, hp_mappo_v2_settings, hp_mlp_settings, u
 
 def _objective(trial, args_dict, _log):
     param = copy.deepcopy(args_dict)
-    if param["name"].contain("mappo_v2"):
+    if "mappo_v2" in param["name"]:
         param = hp_mappo_v2_settings(trial, param)
     else:
         param = hp_mappo_settings(trial, param)

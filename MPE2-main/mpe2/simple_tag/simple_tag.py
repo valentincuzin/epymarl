@@ -420,6 +420,7 @@ def get_others_infos(agent, others, observation_range):
     if there are in the observation range of the agent.
     """
     others_info = []
+    visible = True
     for other in others:
 
         if observation_range is not None:

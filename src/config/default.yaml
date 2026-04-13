@@ -10,7 +10,7 @@ env_args: {
   num_adversaries: 10,
   num_obstacles: 0,
   max_cycles: 50,
-  observation_range: 0.25,
+  # observation_range: 0.25,
   # visual_comm_range: 0.5,
   dynamic_rescaling: True,
   render_mode: 'rgb_array',

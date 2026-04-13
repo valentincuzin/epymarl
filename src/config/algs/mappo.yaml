@@ -31,5 +31,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.1
 
-name: "mappo-full-obs"
+name: "mappo-fo-v2"
 agent: "mlp"

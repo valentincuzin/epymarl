@@ -93,9 +93,9 @@ def create_gif(unique_token):
 def _get_pos_from_x(x: th.Tensor, task_name: str):
     pos = None
     vel = None  # if there is no specific velocity, it's not a problem
-    if 'mpe' in task_name:
-        vel = x[:, :2]
-        pos = x[:, 2:4]
+    if 'mpe2' in task_name:
+        pos = x[:, :2]
+        vel = x[:, 2:4]
     elif task_name.startswith("rware:"):
         pos = x[:, :2]
     return pos, vel

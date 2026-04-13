@@ -52,6 +52,9 @@ def update_hp(study: Study, hp: dict, tuned_path: str) -> dict:
     write_image(fig_relation, f"{tuned_path}_hp_relation.png")
     return hp
 
+
+### TODO ajouter le lr du critic...
+
 def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for classic mappo train process
@@ -77,6 +80,36 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     hp["epochs"] = trial.suggest_int("epochs", 5, 20, step=5)
     hp["batch_size"] = trial.suggest_categorical("batch_size", [8, 16, 32, 64])
     hp["buffer_size"] = hp["batch_size"]
+
+    return hp
+
+def hp_mappo_v2_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for classic mappo train process
+
+    Args:
+        trial (Trial): 
+        hp (dict): 
+
+    Returns:
+        dict: updated params
+    """
+    hp["lr"] = trial.suggest_float("lr", 1e-6, 0.1, log=True)
+    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.0, 0.5) # TODO tester entre 0.01, pour eviter le sample trop près de 0
+    hp["gae_lambda"] = trial.suggest_float("gae_lambda", 0.8, 0.9999)
+    hp["use_clipped_value_loss"] = trial.suggest_categorical("use_clipped_value_loss", [True, False])
+    if hp["use_clipped_value_loss"]:
+        hp["eps_clip_v"] = trial.suggest_float("eps_clip_v", 0.0, 0.5)
+
+    hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.0, 0.5)
+    hp["grad_norm_clip"] = trial.suggest_int("grad_norm_clip", 5, 20, step=5) # TODO tester si on met pas entre 0.0 et 1.0
+
+    hp["epochs"] = trial.suggest_int("epochs", 5, 20, step=5)
+    hp["batch_size"] = trial.suggest_categorical("batch_size", [8, 16, 32, 64])
+    hp["buffer_size"] = hp["batch_size"]
+
+    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [True, False])
+    hp["normalise_advantages"] = trial.suggest_categorical("normalise_advantages", [True, False])
 
     return hp
 

@@ -13,7 +13,7 @@ class PPOLearnerV2:
     # inspired by this implementation https://github.com/marlbenchmark/on-policy
     # ADD:
     #   GAE compute return
-    #   remove critic
+    #   remove target critic
     #   advantage norm
     #   clip value
     def __init__(self, mac, scheme, logger, args):

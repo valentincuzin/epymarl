@@ -9,7 +9,13 @@ from components.standarize_stream import RunningMeanStd
 from modules.critics import REGISTRY as critic_resigtry
 
 
-class PPOLearnerGAE:
+class PPOLearnerV2:
+    # inspired by this implementation https://github.com/marlbenchmark/on-policy
+    # ADD:
+    #   GAE compute return
+    #   remove critic
+    #   advantage norm
+    #   clip value
     def __init__(self, mac, scheme, logger, args):
         self.args = args
         self.n_agents = args.n_agents
@@ -22,13 +28,10 @@ class PPOLearnerGAE:
         self.agent_optimiser = Adam(params=self.agent_params, lr=args.lr)
 
         self.critic = critic_resigtry[args.critic_type](scheme, args)
-        self.target_critic = copy.deepcopy(self.critic)
 
         self.critic_params = list(self.critic.parameters())
         self.critic_optimiser = Adam(params=self.critic_params, lr=args.lr)
 
-        self.last_target_update_step = 0
-        self.critic_training_steps = 0
         self.log_stats_t = -self.args.learner_log_interval - 1
 
         device = "cuda" if args.use_cuda else "cpu"
@@ -85,7 +88,7 @@ class PPOLearnerGAE:
 
             pi = mac_out
             advantages, critic_train_stats = self.train_critic_sequential(
-                self.critic, self.target_critic, batch, rewards, critic_mask
+                self.critic, batch, rewards, critic_mask
             )
             advantages = advantages.detach()
             # Calculate policy grad with mask
@@ -120,26 +123,14 @@ class PPOLearnerGAE:
 
         self.old_mac.load_state(self.mac)
 
-        self.critic_training_steps += 1
-        if (
-            self.args.target_update_interval_or_tau > 1
-            and (self.critic_training_steps - self.last_target_update_step)
-            / self.args.target_update_interval_or_tau
-            >= 1.0
-        ):
-            self._update_targets_hard()
-            self.last_target_update_step = self.critic_training_steps
-        elif self.args.target_update_interval_or_tau <= 1.0:
-            self._update_targets_soft(self.args.target_update_interval_or_tau)
-
         if t_env - self.log_stats_t >= self.args.learner_log_interval:
             ts_logged = len(critic_train_stats["critic_loss"])
             for key in [
                 "critic_loss",
                 "critic_grad_norm",
-                "td_error_abs",
+                "advantages_abs",
                 "q_taken_mean",
-                "target_mean",
+                "gae_returns_means",
             ]:
                 self.logger.log_stat(
                     key, sum(critic_train_stats[key]) / ts_logged, t_env
@@ -159,42 +150,48 @@ class PPOLearnerGAE:
             )
             self.log_stats_t = t_env
 
-    def train_critic_sequential(self, critic, target_critic, batch, rewards, mask):
+    def train_critic_sequential(self, critic, batch, rewards, mask):
         # Optimise critic
         with th.no_grad():
-            target_vals = target_critic(batch)
-            target_vals = target_vals.squeeze(3)
+            old_v = critic(batch).squeeze(3)
+        v = critic(batch)[:, :-1].squeeze(3)
 
-        # TODO ~~test to doesn't standardise_returns in this case~~
-        # test one time, without it's better
-        # if self.args.standardise_returns:
-        #     target_vals = target_vals * th.sqrt(self.ret_ms.var) + self.ret_ms.mean
-
-        target_returns = self.gae_returns(
-            rewards, mask, target_vals
-            )
-        # Replace by gae_returns function
-        # target_returns = self.nstep_returns(
-        #     rewards, mask, target_vals, self.args.q_nstep
-        # )
+        # destandardise return
         if self.args.standardise_returns:
-            self.ret_ms.update(target_returns)
-            target_returns = (target_returns - self.ret_ms.mean) / th.sqrt(
+            old_v = old_v * th.sqrt(self.ret_ms.var) + self.ret_ms.mean
+            v = v * th.sqrt(self.ret_ms.var) + self.ret_ms.mean
+
+        gae_returns = self.gae_returns(
+            rewards, mask, old_v, self.args.gae_lambda
+            )
+
+        if self.args.standardise_returns:
+            self.ret_ms.update(gae_returns)
+            gae_returns = (gae_returns - self.ret_ms.mean) / th.sqrt(
                 self.ret_ms.var
             )
 
-        running_log = {
-            "critic_loss": [],
-            "critic_grad_norm": [],
-            "td_error_abs": [],
-            "target_mean": [],
-            "q_taken_mean": [],
-        }
+        advantages = gae_returns.detach() - v
+        if self.args.normalise_advantages:
+            advantages_copy = advantages.clone()[mask == 1]
+            mean_advantages = th.mean(advantages_copy)
+            std_advantages = th.std(advantages_copy)
+            advantages = (advantages - mean_advantages) / std_advantages
+            advantages[mask == 0] = 0.0
+        
+        if self.args.use_clipped_value_loss:           
+            v_preds_clipped = old_v[:, :-1] + (v - old_v[:, :-1]).clamp(
+                -self.args.eps_clip_v, self.args.eps_clip_v
+            )
 
-        v = critic(batch)[:, :-1].squeeze(3)
-        td_error = target_returns.detach() - v
-        masked_td_error = td_error * mask
-        loss = (masked_td_error**2).sum() / mask.sum()
+            loss_clipped = ((gae_returns.detach() - v_preds_clipped) ** 2)
+            loss_original = ((gae_returns.detach() - v) ** 2)
+            
+            loss = th.max(loss_clipped, loss_original)
+            loss = (loss * mask).sum() / mask.sum()
+            
+        else:
+            loss = ((gae_returns.detach()-v)**2*mask).sum() / mask.sum()
 
         self.critic_optimiser.zero_grad()
         loss.backward()
@@ -203,22 +200,29 @@ class PPOLearnerGAE:
         )
         self.critic_optimiser.step()
 
+        running_log = {
+            "critic_loss": [],
+            "critic_grad_norm": [],
+            "advantages_abs": [],
+            "gae_returns_means": [],
+            "q_taken_mean": [],
+        }
+
         running_log["critic_loss"].append(loss.item())
         running_log["critic_grad_norm"].append(grad_norm.item())
         mask_elems = mask.sum().item()
-        running_log["td_error_abs"].append(
-            (masked_td_error.abs().sum().item() / mask_elems)
+        running_log["advantages_abs"].append(
+            (advantages.abs().sum().item() / mask_elems)
         )
         running_log["q_taken_mean"].append((v * mask).sum().item() / mask_elems)
-        running_log["target_mean"].append(
-            (target_returns * mask).sum().item() / mask_elems
+        running_log["gae_returns_means"].append(
+            (gae_returns * mask).sum().item() / mask_elems
         )
 
-        return masked_td_error, running_log
+        return advantages, running_log
 
-    def gae_returns(self, rewards, mask, values):
+    def gae_returns(self, rewards, mask, values, gae_lambda=0.95):
         # inspired by this implementation https://github.com/marlbenchmark/on-policy
-        gae_lambda = 0.95  # hard coded for now
         mask = th.cat([mask, mask[:, -1:].clone()], dim=1)
         T = rewards.size(1)
         gae_values = th.zeros_like(values[:, :-1])  # (B, T)
@@ -233,23 +237,10 @@ class PPOLearnerGAE:
             gae_values[:, t_start] = gae_t + values[:, t_start]
         return gae_values
 
-    def _update_targets(self):
-        self.target_critic.load_state_dict(self.critic.state_dict())
-
-    def _update_targets_hard(self):
-        self.target_critic.load_state_dict(self.critic.state_dict())
-
-    def _update_targets_soft(self, tau):
-        for target_param, param in zip(
-            self.target_critic.parameters(), self.critic.parameters()
-        ):
-            target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
-
     def cuda(self):
         self.old_mac.cuda()
         self.mac.cuda()
         self.critic.cuda()
-        self.target_critic.cuda()
 
     def save_models(self, path):
         self.mac.save_models(path)
@@ -264,8 +255,6 @@ class PPOLearnerGAE:
                 "{}/critic.th".format(path), map_location=lambda storage, loc: storage
             )
         )
-        # Not quite right but I don't want to save target networks
-        self.target_critic.load_state_dict(self.critic.state_dict())
         self.agent_optimiser.load_state_dict(
             th.load(
                 "{}/agent_opt.th".format(path),

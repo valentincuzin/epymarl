@@ -1,8 +1,6 @@
 # code adapted from https://github.com/wendelinboehmer/dcg
 
 import torch.nn as nn
-import torch.nn.functional as F
-
 
 class MLPAgent(nn.Module):
     def __init__(self, input_shape, args):

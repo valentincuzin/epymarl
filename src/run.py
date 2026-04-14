@@ -27,6 +27,7 @@ from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
 from utils.hp import hp_mappo_settings, hp_mappo_v2_settings, hp_mlp_settings, update_hp
 
+
 def _objective(trial, args_dict, _log):
     param = copy.deepcopy(args_dict)
     if "mappo_v2" in param["name"]:
@@ -35,17 +36,25 @@ def _objective(trial, args_dict, _log):
         param = hp_mappo_settings(trial, param)
     param = hp_mlp_settings(trial, param)
     param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
-    param["t_max"] = int(param["t_max"]/2)  # we only tune for fast learning
+    param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
     hp_args = SN(**param)
     hp_logger = Logger(_log)
-
-    run_sequential(args=hp_args, logger=hp_logger)
+    try:
+        run_sequential(args=hp_args, logger=hp_logger)
+    except Exception as e:
+        hp_logger.console_logger.exception(
+            f"error handle, this setting is not good... {str(e)}"
+        )
+        return -1.0
     # we return the 25% last time_step mean of the return mean curve
     start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
-    tmp_res = int(np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]]))
+    tmp_res = int(
+        np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]])
+    )
     return tmp_res
+
 
 def _run_optim(args_dict, _log):
     sampler = optuna.samplers.TPESampler(
@@ -61,9 +70,12 @@ def _run_optim(args_dict, _log):
         direction="maximize",
     )
     obj = partial(_objective, args_dict=args_dict, _log=_log)
-    study.optimize(obj, n_trials=args_dict["hp_search"], n_jobs=1, show_progress_bar=True)
+    study.optimize(
+        obj, n_trials=args_dict["hp_search"], n_jobs=1, show_progress_bar=True
+    )
     return study
-    
+
+
 def run(_run, _config, _log):
     # check args sanity
     _config = args_sanity_check(_config, _log)
@@ -318,8 +330,13 @@ def run_sequential(args, logger):
             logger.log_stat("episode", episode, runner.t_env)
             logger.print_recent_stats()
             last_log_T = runner.t_env
-        if hasattr(args, "trial") and (runner.t_env - last_test_T) / args.test_interval >= 1.0:
-            tmp_res = int(np.mean([x[1].item() for x in logger.stats["test_return_mean"][-5:]]))
+        if (
+            hasattr(args, "trial")
+            and (runner.t_env - last_test_T) / args.test_interval >= 1.0
+        ):
+            tmp_res = int(
+                np.mean([x[1].item() for x in logger.stats["test_return_mean"][-5:]])
+            )
             args.trial.report(tmp_res, runner.t_env)
             # Handle pruning based on the intermediate value.
             if args.trial.should_prune():

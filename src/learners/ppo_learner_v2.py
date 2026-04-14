@@ -30,7 +30,7 @@ class PPOLearnerV2:
         self.critic = critic_resigtry[args.critic_type](scheme, args)
 
         self.critic_params = list(self.critic.parameters())
-        self.critic_optimiser = Adam(params=self.critic_params, lr=args.lr)
+        self.critic_optimiser = Adam(params=self.critic_params, lr=args.lr_v)
 
         self.log_stats_t = -self.args.learner_log_interval - 1
 

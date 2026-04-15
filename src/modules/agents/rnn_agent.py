@@ -25,7 +25,7 @@ class RNNAgent(nn.Module):
         self.rnn = nn.ModuleList(self.rnn_layers)
 
         self.act_prob = nn.Sequential(
-            nn.LayerNorm(args.hidden_dim) if args.layer_norm else [],
+            nn.LayerNorm(args.hidden_dim) if args.layer_norm else nn.Identity(),
             nn.Linear(args.hidden_dim, args.n_actions),
         )
         print(

@@ -57,7 +57,7 @@ def _run_optim(args_dict, _log):
     sampler = optuna.samplers.TPESampler(
         multivariate=True, warn_independent_sampling=False, seed=42
     )
-    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=5)
+    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=2)
     study = optuna.create_study(
         study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),

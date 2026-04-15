@@ -12,9 +12,11 @@ batch_size: 32
 target_update_interval_or_tau: 0.01
 
 lr: 0.0003
+lr_v: 0.0003
 hidden_dim: 128
 layer_norm: True
 n_layers: 2
+n_layers_rnn: 2
 
 obs_agent_id: True
 obs_last_action: False

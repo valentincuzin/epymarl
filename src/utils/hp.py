@@ -82,37 +82,6 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
 
     return hp
 
-def hp_mappo_v2_settings(trial: Trial, hp: dict) -> dict:
-    """
-    suggest params for classic mappo train process
-
-    Args:
-        trial (Trial): 
-        hp (dict): 
-
-    Returns:
-        dict: updated params
-    """
-    hp["lr"] = trial.suggest_float("lr", 1e-6, 0.1, log=True)
-    hp["lr_v"] = trial.suggest_float("lr_v", 1e-6, 0.1, log=True)
-    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.01, 0.5)
-    hp["gae_lambda"] = trial.suggest_float("gae_lambda", 0.8, 0.9999)
-    hp["use_clipped_value_loss"] = trial.suggest_categorical("use_clipped_value_loss", [True, False])
-    if hp["use_clipped_value_loss"]:
-        hp["eps_clip_v"] = trial.suggest_float("eps_clip_v", 0.01, 0.5)
-
-    hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.0, 0.5)
-    hp["grad_norm_clip"] = trial.suggest_int("grad_norm_clip", 1, 20)
-
-    hp["epochs"] = trial.suggest_int("epochs", 5, 20)
-    hp["batch_size"] = trial.suggest_categorical("batch_size", [8, 16, 32, 64])
-    hp["buffer_size"] = hp["batch_size"]
-
-    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [True, False])
-    hp["normalise_advantages"] = trial.suggest_categorical("normalise_advantages", [True, False])
-
-    return hp
-
 def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for mlp architecture
@@ -127,5 +96,21 @@ def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     hp["n_layers"] = trial.suggest_int("n_layers", 1, 3)
     hp["hidden_dim"] = trial.suggest_int("hidden_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [True, False])
+
+    return hp
+
+def hp_rnn_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for rnn architecture
+
+    Args:
+        trial (Trial): 
+        hp (dict): 
+
+    Returns:
+        dict: updated params
+    """
+    hp = hp_mlp_settings(trial, hp)
+    hp["n_layers_rnn"] = trial.suggest_int("n_layers_rnn", 1, 3)
 
     return hp

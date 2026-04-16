@@ -56,12 +56,12 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
             raise RuntimeError("from_pos topology needs positions as input")
         graphs.edge_index = radius_graph(graphs.pos, batch=graphs.batch, r=args.comm_range, loop=False)
     graphs = graphs.to(x.device)
-    # TODO: prove the improvment of this component => better
+    # old todo: prove the improvment of this component => better
     # Add relative coordonate and distance in edge_attr in all the graph
     if pos is not None:
         graphs = pyg.transforms.Cartesian(norm=False)(graphs)
         graphs = pyg.transforms.Distance(norm=False)(graphs)
-    # TODO prove the improvment of this component => worst
+    # old todo: prove the improvment of this component => worst
     # Create relative velocity
     # if vel is not None:
     #     graphs = _RelVel()(graphs)

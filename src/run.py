@@ -40,7 +40,7 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_gnn_settings(trial, param)
         case "gnn_v2":
             param = hp.hp_gnn_settings(trial, param)
-    param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
+    param["seed"] = 42  # set to 42 to reproductibility and unbiased by seed during test
     param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning

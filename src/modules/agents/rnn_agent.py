@@ -36,6 +36,7 @@ class RNNAgent(nn.Module):
             .unsqueeze(0)
             .expand(batch_size, n_agents, -1)
         )  # bav
+        # TODO undo my change, and pass the init_hidden to basic_controller again
         return self.hidden_states
 
     def forward(self, inputs, hidden_state):

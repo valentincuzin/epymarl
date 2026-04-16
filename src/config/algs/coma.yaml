@@ -25,7 +25,7 @@ critic_q_fn: "coma"
 standardise_returns: False
 standardise_rewards: True
 
-hidden_dim: 64
+h_dim: 64
 
 critic_baseline_fn: "coma"
 critic_train_mode: "seq"

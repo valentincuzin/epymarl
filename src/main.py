@@ -95,7 +95,7 @@ def _hp_load(task: str, alg: str) -> dict:
             )
         with open(tuned_path,"r") as f:
             try:
-                config_dict = yaml.load(f, Loader=yaml.FullLoader)
+                config_dict: dict = yaml.load(f, Loader=yaml.FullLoader)
                 config_dict["tuned_path"] = tuned_path
             except yaml.YAMLError as exc:
                 assert False, "{}_best.yaml error: {}".format(alg, exc)
@@ -103,6 +103,8 @@ def _hp_load(task: str, alg: str) -> dict:
         raise FileNotFoundError(f"No hyperparameter file found at {tuned_path}")
     print("--- HYPER-PARAM ---\n\n", config_dict, '\n')
     config_dict["hp_search"] = 0
+    config_dict.pop("seed")  # doesn't overight the seed
+    config_dict["env_args"].pop("seed")
     return config_dict
 
 
@@ -172,7 +174,8 @@ if __name__ == "__main__":
         except FileNotFoundError as e:
             print(f"WARNING: no tuned config found: {str(e)}...")
 
-
+    if hasattr(config_dict, "comm_range") and config_dict["comm_range"] > 0.0:
+        config_dict["env_args"]["visual_comm_range"] = config_dict["comm_range"]  # add visu
     # now add all the config to sacred
     ex.add_config(config_dict)
 

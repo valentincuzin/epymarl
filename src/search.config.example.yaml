@@ -17,7 +17,7 @@ grid-search:
     - 200
     - 0.01
 
-  hidden_dim:
+  h_dim:
     - 64
     - 128
 

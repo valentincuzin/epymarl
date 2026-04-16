@@ -22,7 +22,7 @@ standardise_rewards: True
 
 learner: "maddpg_learner"
 agent_output_type: "pi_logits"
-hidden_dim: 128
+h_dim: 128
 layer_norm: True
 n_layers: 2
 critic_type: "maddpg_critic_ns"

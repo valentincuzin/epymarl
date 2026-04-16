@@ -23,33 +23,49 @@ from utils.timehelper import time_left, time_str
 from functools import partial
 import copy
 import optuna
-from multiprocessing import Pool
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
-from utils.hp import hp_mappo_settings, hp_mlp_settings, update_hp
+import utils.hp as hp
+
 
 def _objective(trial, args_dict, _log):
     param = copy.deepcopy(args_dict)
-    param = hp_mappo_settings(trial, param)
-    param = hp_mlp_settings(trial, param)
+    param = hp.hp_mappo_settings(trial, param)
+    match param["agent"]:
+        case "mlp":
+            param = hp.hp_mlp_settings(trial, param)
+        case "rnn":
+            param = hp.hp_rnn_settings(trial, param)
+        case "gnn":
+            param = hp.hp_gnn_settings(trial, param)
+        case "gnn_v2":
+            param = hp.hp_gnn_settings(trial, param)
     param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
-    param["test_interval"] = param["t_max"]  # no need for test
-    param["t_max"] = int(param["t_max"]/2)  # we only tune for fast learning
+    param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
     hp_args = SN(**param)
     hp_logger = Logger(_log)
-
-    run_sequential(args=hp_args, logger=hp_logger)
+    try:
+        run_sequential(args=hp_args, logger=hp_logger)
+    except Exception as e:
+        hp_logger.console_logger.exception(
+            f"error handle, this setting is not good... {str(e)}"
+        )
+        return -1.0
     # we return the 25% last time_step mean of the return mean curve
-    start = int(len(hp_logger.stats["return_mean"]) * 0.75)
-    return int(np.mean([ rt[1] for rt in hp_logger.stats["return_mean"][start:]]))
+    start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
+    tmp_res = int(
+        np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]])
+    )
+    return tmp_res
+
 
 def _run_optim(args_dict, _log):
     sampler = optuna.samplers.TPESampler(
         multivariate=True, warn_independent_sampling=False, seed=42
     )
-    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=2)
+    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=1)
     study = optuna.create_study(
         study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
@@ -59,9 +75,12 @@ def _run_optim(args_dict, _log):
         direction="maximize",
     )
     obj = partial(_objective, args_dict=args_dict, _log=_log)
-    study.optimize(obj, n_trials=args_dict["hp_search"], n_jobs=1, show_progress_bar=True)
+    study.optimize(
+        obj, n_trials=args_dict["hp_search"], n_jobs=1, show_progress_bar=True
+    )
     return study
-    
+
+
 def run(_run, _config, _log):
     # check args sanity
     _config = args_sanity_check(_config, _log)
@@ -91,7 +110,7 @@ def run(_run, _config, _log):
         #     f"{args.hp_search} search for {args.unique_token}",
         #     JournalStorage(JournalFileBackend(file_path="./journal.log")),
         # )
-        args_dict = update_hp(
+        args_dict = hp.update_hp(
             study, args_dict, f"src/config/tuned/{map_name}/{args.name}_best.yaml"
         )
         args = SN(**args_dict)
@@ -316,8 +335,14 @@ def run_sequential(args, logger):
             logger.log_stat("episode", episode, runner.t_env)
             logger.print_recent_stats()
             last_log_T = runner.t_env
-        if hasattr(args, "trial"):
-            args.trial.report(int(logger.stats["episode"][-1]["return_mean"]), runner.t_env)
+        if (
+            hasattr(args, "trial")
+            and (runner.t_env - last_test_T) / args.test_interval >= 1.0
+        ):
+            tmp_res = int(
+                np.mean([x[1].item() for x in logger.stats["test_return_mean"][-5:]])
+            )
+            args.trial.report(tmp_res, runner.t_env)
             # Handle pruning based on the intermediate value.
             if args.trial.should_prune():
                 raise optuna.TrialPruned()

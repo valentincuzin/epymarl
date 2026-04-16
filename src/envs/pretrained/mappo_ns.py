@@ -46,7 +46,7 @@ class MAPPO_NS():
 
     def __init__(self, actor_input_dim, actor_output_dim, hidden):
         args = {
-            "hidden_dim": hidden,
+            "h_dim": hidden,
             "n_actions": actor_output_dim,
         }
         args = SN(**args)

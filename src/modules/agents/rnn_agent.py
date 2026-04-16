@@ -11,22 +11,18 @@ class RNNAgent(nn.Module):
 
         self.fc_layers = []
         for _ in range(args.n_layers):
-            self.fc_layers.append(nn.Linear(input_shape, args.hidden_dim))
+            self.fc_layers.append(nn.Linear(input_shape, args.h_dim))
             self.fc_layers.append(nn.ReLU())
             if args.layer_norm:
-                self.fc_layers.append(nn.LayerNorm(args.hidden_dim))
-            input_shape = args.hidden_dim
+                self.fc_layers.append(nn.LayerNorm(args.h_dim))
+            input_shape = args.h_dim
         self.base = nn.Sequential(*self.fc_layers)
 
-        self.rnn_layers = []
-        for _ in range(args.n_layers_rnn):
-            self.rnn_layers.append(nn.GRUCell(input_shape, args.hidden_dim))
-            input_shape = args.hidden_dim
-        self.rnn = nn.ModuleList(self.rnn_layers)
+        self.rnn = nn.GRUCell(input_shape, args.mem_dim)
 
         self.act_prob = nn.Sequential(
-            nn.LayerNorm(args.hidden_dim) if args.layer_norm else nn.Identity(),
-            nn.Linear(args.hidden_dim, args.n_actions),
+            nn.LayerNorm(args.mem_dim) if args.layer_norm else nn.Identity(),
+            nn.Linear(args.mem_dim, args.n_actions),
         )
         print(
             f"\n\nDEBUG: total number of PARAMETERS for RNNAgent: {sum(p.numel() for p in self.parameters())} #####\n\n"
@@ -35,22 +31,16 @@ class RNNAgent(nn.Module):
     def init_hidden(self, batch_size, n_agents):
         # make hidden states on same device as model
         param = next(self.parameters())
-        self.hidden_states = []
-        for _ in range(self.args.n_layers_rnn):
-            self.hidden_states.append(
-                param.new_zeros(1, self.args.hidden_dim)
-                .unsqueeze(0)
-                .expand(batch_size, n_agents, -1)
-            )  # bav
+        self.hidden_states = (
+            param.new_zeros(1, self.args.mem_dim)
+            .unsqueeze(0)
+            .expand(batch_size, n_agents, -1)
+        )  # bav
         return self.hidden_states
 
-    def forward(self, inputs, hidden_states):
+    def forward(self, inputs, hidden_state):
         x = self.base(inputs)
-        for n in range(self.args.n_layers_rnn):
-            hidden_state = hidden_states[n]
-            h_rnn = hidden_state.reshape(-1, self.args.hidden_dim)
-            h = self.rnn[n](x, h_rnn)
-            hidden_states[n] = h
-            x = h
-        q = self.act_prob(h)
-        return q, hidden_states
+        h_rnn = hidden_state.reshape(-1, self.args.mem_dim)
+        h_rnn = self.rnn(x, h_rnn)
+        q = self.act_prob(h_rnn)
+        return q, h_rnn

@@ -33,7 +33,7 @@ class DCGCriticNS:
         # New utilities and payoffs
         self.utility_fun = [
             self._mlp(
-                self.args.hidden_dim, args.cg_utilities_hidden_dim, self.n_actions
+                self.args.h_dim, args.cg_utilities_h_dim, self.n_actions
             )
             for _ in range(self.n_agents)
         ]
@@ -50,7 +50,7 @@ class DCGCriticNS:
         self._set_edges(self._edge_list(args.cg_edges))
 
         self.payoff_fun = [
-            self._mlp(2 * self.args.hidden_dim, args.cg_payoffs_hidden_dim, payoff_out)
+            self._mlp(2 * self.args.h_dim, args.cg_payoffs_h_dim, payoff_out)
             for _ in range(len(self.edges_from))
         ]
 
@@ -325,13 +325,13 @@ class DCGCriticNS:
             self.payoff_fun[i].load_state_dict(other_mac.payoff_fun[i].state_dict())
 
     @staticmethod
-    def _mlp(input, hidden_dims, output):
+    def _mlp(input, h_dims, output):
         """Creates an MLP with the specified input and output dimensions and (optional) hidden layers."""
-        hidden_dims = [] if hidden_dims is None else hidden_dims
-        hidden_dims = [hidden_dims] if isinstance(hidden_dims, int) else hidden_dims
+        h_dims = [] if h_dims is None else h_dims
+        h_dims = [h_dims] if isinstance(h_dims, int) else h_dims
         dim = input
         layers = []
-        for d in hidden_dims:
+        for d in h_dims:
             layers.append(nn.Linear(dim, d))
             layers.append(nn.ReLU())
             dim = d

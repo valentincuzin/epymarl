@@ -16,9 +16,9 @@ class MADDPGCritic(nn.Module):
         self.output_type = "q"
 
         # Set up network layers
-        self.fc1 = nn.Linear(self.input_shape, args.hidden_dim)
-        self.fc2 = nn.Linear(args.hidden_dim, args.hidden_dim)
-        self.fc3 = nn.Linear(args.hidden_dim, 1)
+        self.fc1 = nn.Linear(self.input_shape, args.h_dim)
+        self.fc2 = nn.Linear(args.h_dim, args.h_dim)
+        self.fc3 = nn.Linear(args.h_dim, 1)
 
     def forward(self, inputs, actions):
         inputs = th.cat((inputs, actions), dim=-1)

@@ -40,7 +40,7 @@ gamma: 0.99
 optim_alpha: 0.99 # RMSProp alpha
 optim_eps: 0.00005 # RMSProp epsilon
 grad_norm_clip: 15.0 # Reduce magnitude of gradients above this L2 norm
-add_value_last_step: False
+add_value_last_step: True
 
 # --- Experiment running params ---
 hp_search: 0

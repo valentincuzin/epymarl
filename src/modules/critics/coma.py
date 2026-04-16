@@ -15,9 +15,9 @@ class COMACritic(nn.Module):
         self.output_type = "q"
 
         # Set up network layers
-        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        self.fc2 = nn.Linear(args.hidden_dim, args.hidden_dim)
-        self.fc3 = nn.Linear(args.hidden_dim, self.n_actions)
+        self.fc1 = nn.Linear(input_shape, args.h_dim)
+        self.fc2 = nn.Linear(args.h_dim, args.h_dim)
+        self.fc3 = nn.Linear(args.h_dim, self.n_actions)
 
     def forward(self, batch, t=None):
         inputs = self._build_inputs(batch, t=t)

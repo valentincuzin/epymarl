@@ -8,11 +8,22 @@ runner: "parallel"
 buffer_size: 32
 batch_size: 32
 
+# Communication setting
+comm_range: 0.5
+env_args:
+  visual_comm_range: 0.5  # must be the same as comm_range parameter
+
+n_heads_gat: 1
+dropout_gat: 0
+residual_gat: False
+edge_attr: True
+
 # update the target network every {} training steps
 target_update_interval_or_tau: 0.01
 
 lr: 0.0003
-hidden_dim: 128
+h_dim: 128
+gnn_dim: 256
 layer_norm: True
 n_layers: 2
 
@@ -32,4 +43,4 @@ epochs: 10
 eps_clip: 0.1
 
 name: "g2-mappo"
-agent: "gnn-2"
+agent: "gnn_v2"

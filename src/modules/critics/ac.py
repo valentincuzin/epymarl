@@ -15,9 +15,9 @@ class ACCritic(nn.Module):
         self.output_type = "v"
 
         # Set up network layers
-        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        self.fc2 = nn.Linear(args.hidden_dim, args.hidden_dim)
-        self.fc3 = nn.Linear(args.hidden_dim, 1)
+        self.fc1 = nn.Linear(input_shape, args.h_dim)
+        self.fc2 = nn.Linear(args.h_dim, args.h_dim)
+        self.fc3 = nn.Linear(args.h_dim, 1)
 
     def forward(self, batch, t=None):
         inputs, bs, max_t = self._build_inputs(batch, t=t)

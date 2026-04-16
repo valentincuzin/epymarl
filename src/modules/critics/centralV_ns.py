@@ -19,7 +19,7 @@ class CentralVCriticNS(nn.Module):
 
         # Set up network layers
         self.critics = [
-            MLP(input_shape, args.hidden_dim, 1) for _ in range(self.n_agents)
+            MLP(input_shape, args.h_dim, 1) for _ in range(self.n_agents)
         ]
 
     def forward(self, batch, t=None):

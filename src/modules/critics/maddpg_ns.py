@@ -18,7 +18,7 @@ class MADDPGCriticNS(nn.Module):
             self.input_shape += self.n_actions
         self.output_type = "q"
         self.critics = [
-            MLP(self.input_shape, self.args.hidden_dim, 1) for _ in range(self.n_agents)
+            MLP(self.input_shape, self.args.h_dim, 1) for _ in range(self.n_agents)
         ]
 
     def forward(self, inputs, actions):

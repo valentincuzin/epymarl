@@ -28,7 +28,7 @@ eps_clip: 0.4446166227898827
 evaluate: false
 gamma: 0.99
 grad_norm_clip: 8
-hidden_dim: 320
+h_dim: 320
 hp_search: 25
 hypergroup: null
 label: default_label

@@ -33,9 +33,9 @@ class PACCritic(nn.Module):
 
         # Set up network layers
         # Set up network layers
-        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        self.fc2 = nn.Linear(args.hidden_dim, args.hidden_dim)
-        self.fc3 = nn.Linear(args.hidden_dim, self.n_actions)
+        self.fc1 = nn.Linear(input_shape, args.h_dim)
+        self.fc2 = nn.Linear(args.h_dim, args.h_dim)
+        self.fc3 = nn.Linear(args.h_dim, self.n_actions)
 
         self.device = "cuda" if args.use_cuda else "cpu"
 

@@ -32,7 +32,7 @@ class PACCriticNS(nn.Module):
 
         # Set up network layers
         self.critics = [
-            MLP(input_shape, args.hidden_dim, self.n_actions)
+            MLP(input_shape, args.h_dim, self.n_actions)
             for _ in range(self.n_agents)
         ]
 

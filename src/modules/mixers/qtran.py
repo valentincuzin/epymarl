@@ -22,7 +22,7 @@ class QTranBase(nn.Module):
             q_input_size = self.state_dim + (self.n_agents * self.n_actions)
         elif self.arch == "qtran_paper":
             # Q takes [state, agent_action_observation_encodings]
-            q_input_size = self.state_dim + self.args.rnn_hidden_dim + self.n_actions
+            q_input_size = self.state_dim + self.args.rnn_h_dim + self.n_actions
         else:
             raise Exception("{} is not a valid QTran architecture".format(self.arch))
 
@@ -43,7 +43,7 @@ class QTranBase(nn.Module):
                 nn.ReLU(),
                 nn.Linear(self.embed_dim, 1),
             )
-            ae_input = self.args.rnn_hidden_dim + self.n_actions
+            ae_input = self.args.rnn_h_dim + self.n_actions
             self.action_encoding = nn.Sequential(
                 nn.Linear(ae_input, ae_input), nn.ReLU(), nn.Linear(ae_input, ae_input)
             )
@@ -67,7 +67,7 @@ class QTranBase(nn.Module):
                 nn.ReLU(),
                 nn.Linear(self.embed_dim, 1),
             )
-            ae_input = self.args.rnn_hidden_dim + self.n_actions
+            ae_input = self.args.rnn_h_dim + self.n_actions
             self.action_encoding = nn.Sequential(
                 nn.Linear(ae_input, ae_input), nn.ReLU(), nn.Linear(ae_input, ae_input)
             )

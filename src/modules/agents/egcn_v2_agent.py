@@ -22,10 +22,10 @@ class EGCN_HAgent(nn.Module):
         super(EGCN_HAgent, self).__init__()
         self.args = args
 
-        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        self.egcn = EvolveGCNH(args.n_agents*args.batch_size, args.hidden_dim)
+        self.fc1 = nn.Linear(input_shape, args.h_dim)
+        self.egcn = EvolveGCNH(args.n_agents*args.batch_size, args.h_dim)
 
-        self.fc2 = nn.Linear(args.hidden_dim+args.hidden_dim, args.n_actions)
+        self.fc2 = nn.Linear(args.h_dim+args.h_dim, args.n_actions)
         print(
             f"\n\nDEBUG: total number of PARAMETERS for EGCN_HAgent: {sum(p.numel() for p in self.parameters())} #####\n\n"
         )
@@ -33,7 +33,7 @@ class EGCN_HAgent(nn.Module):
     def init_hidden(self):
         # make hidden states on same device as model
         param = next(self.parameters())
-        return param.new_zeros(1, self.args.hidden_dim)
+        return param.new_zeros(1, self.args.h_dim)
 
     def forward(self, inputs, hidden_states):
         x = F.relu(self.fc1(inputs))
@@ -60,10 +60,10 @@ class EGCN_OAgent(nn.Module):
         super(EGCN_OAgent, self).__init__()
         self.args = args
 
-        self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        self.egcn = EvolveGCNO(args.hidden_dim)
+        self.fc1 = nn.Linear(input_shape, args.h_dim)
+        self.egcn = EvolveGCNO(args.h_dim)
 
-        self.fc2 = nn.Linear(args.hidden_dim+args.hidden_dim, args.n_actions)
+        self.fc2 = nn.Linear(args.h_dim+args.h_dim, args.n_actions)
         print(
             f"\n\nDEBUG: total number of PARAMETERS for EGCN_OAgent: {sum(p.numel() for p in self.parameters())} #####\n\n"
         )
@@ -71,7 +71,7 @@ class EGCN_OAgent(nn.Module):
     def init_hidden(self):
         # make hidden states on same device as model
         param = next(self.parameters())
-        return param.new_zeros(1, self.args.hidden_dim)
+        return param.new_zeros(1, self.args.h_dim)
 
     def forward(self, inputs, hidden_states):
         x = F.relu(self.fc1(inputs))

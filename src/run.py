@@ -25,13 +25,21 @@ import copy
 import optuna
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
-from utils.hp import hp_mappo_settings, hp_mlp_settings, update_hp
+import utils.hp as hp
 
 
 def _objective(trial, args_dict, _log):
     param = copy.deepcopy(args_dict)
-    param = hp_mappo_settings(trial, param)
-    param = hp_mlp_settings(trial, param)
+    param = hp.hp_mappo_settings(trial, param)
+    match param["agent"]:
+        case "mlp":
+            param = hp.hp_mlp_settings(trial, param)
+        case "rnn":
+            param = hp.hp_rnn_settings(trial, param)
+        case "gnn":
+            param = hp.hp_gnn_settings(trial, param)
+        case "gnn_v2":
+            param = hp.hp_gnn_settings(trial, param)
     param["seed"] = 42  # set to 0 to reproductibility (TODO TEST)
     param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
@@ -57,7 +65,7 @@ def _run_optim(args_dict, _log):
     sampler = optuna.samplers.TPESampler(
         multivariate=True, warn_independent_sampling=False, seed=42
     )
-    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=2)
+    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=1)
     study = optuna.create_study(
         study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
@@ -102,7 +110,7 @@ def run(_run, _config, _log):
         #     f"{args.hp_search} search for {args.unique_token}",
         #     JournalStorage(JournalFileBackend(file_path="./journal.log")),
         # )
-        args_dict = update_hp(
+        args_dict = hp.update_hp(
             study, args_dict, f"src/config/tuned/{map_name}/{args.name}_best.yaml"
         )
         args = SN(**args_dict)

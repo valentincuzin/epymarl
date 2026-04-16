@@ -1,5 +1,4 @@
 import yaml
-import os
 from optuna.trial import TrialState
 from optuna import Study, Trial, visualization
 from plotly.io import write_image
@@ -65,19 +64,17 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
         dict: updated params
     """
     hp["lr"] = trial.suggest_float("lr", 1e-6, 0.1, log=True)
-    hp["lr_v"] = trial.suggest_float("lr_v", 1e-6, 0.1, log=True)
     hp["eps_clip"] = trial.suggest_float("eps_clip", 0.01, 0.5)
 
     hp["q_nstep"] = trial.suggest_int("q_nstep", 5, 20)
     hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.0, 0.5)
 
     hp["grad_norm_clip"] = trial.suggest_int("grad_norm_clip", 1, 20)
-    hp["add_value_last_step"] = trial.suggest_categorical("add_value_last_step", [True, False])
-    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [True, False])
-    hp["target_update_interval_or_tau"] = trial.suggest_categorical("target_update_interval_or_tau", [0.01, 0.05, 0.1, 0.25, 0.5])
+    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [False, True])
+    hp["target_update_interval_or_tau"] = trial.suggest_float("target_update_interval_or_tau", 0.01, 1.0)
 
     hp["epochs"] = trial.suggest_int("epochs", 5, 20)
-    hp["batch_size"] = trial.suggest_categorical("batch_size", [8, 16, 32, 64])
+    hp["batch_size"] = trial.suggest_int("batch_size", 16, 128, step=16)
     hp["buffer_size"] = hp["batch_size"]
 
     return hp
@@ -94,8 +91,8 @@ def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
         dict: updated params
     """
     hp["n_layers"] = trial.suggest_int("n_layers", 1, 3)
-    hp["hidden_dim"] = trial.suggest_int("hidden_dim", 64, 512, step=64)
-    hp["layer_norm"] = trial.suggest_categorical("layer_norm", [True, False])
+    hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
+    hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
 
     return hp
 
@@ -111,6 +108,24 @@ def hp_rnn_settings(trial: Trial, hp: dict) -> dict:
         dict: updated params
     """
     hp = hp_mlp_settings(trial, hp)
-    hp["n_layers_rnn"] = trial.suggest_int("n_layers_rnn", 1, 3)
+    hp["mem_dim"] = trial.suggest_int("mem_dim", 64, 512, step=64)
+    return hp
 
+def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for gnn architecture
+
+    Args:
+        trial (Trial): 
+        hp (dict): 
+
+    Returns:
+        dict: updated params
+    """
+    hp = hp_mlp_settings(trial, hp)
+    hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
+    hp["n_heads_gat"] = trial.suggest_int("n_heads_gat", 1, 3)
+    hp["dropout_gat"] = trial.suggest_categorical("dropout_gat", [0, 0.25, 0.5])
+    hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
+    hp["edge_attr"] = trial.suggest_categorical("edge_attr", [False, True])
     return hp

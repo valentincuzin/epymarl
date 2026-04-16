@@ -50,7 +50,7 @@ class GNNAgent(nn.Module):
     def _communication_process(self, raw_inputs, x):
         graphs = self._select_communication(raw_inputs)
         graphs.x = x
-        h = self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr)
+        h = self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr if self.args.edge_attr else None)
 
         return h
 
@@ -114,7 +114,7 @@ class GNNAgentV2(nn.Module):
     def _communication_process(self, raw_inputs, x):
         graphs = self._select_communication(raw_inputs)
         graphs.x = x
-        h = self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr)
+        h = self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr if self.args.edge_attr else None)
 
         return h
 

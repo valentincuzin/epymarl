@@ -16,7 +16,6 @@ h_dim: 128
 mem_dim: 256
 layer_norm: True
 n_layers: 2
-n_layers_rnn: 2
 
 obs_agent_id: True
 obs_last_action: False

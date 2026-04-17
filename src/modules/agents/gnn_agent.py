@@ -39,7 +39,7 @@ class GNNAgent(nn.Module):
         # make hidden states on same device as model
         param = next(self.parameters())
         self.reset = True
-        return param.new_zeros(1, self.args.h_dim)
+        return param.new_zeros(1, self.args.gnn_dim)
     
     def forward(self, inputs, hidden_state=None):
         x = self.base(inputs)
@@ -103,7 +103,7 @@ class GNNAgentV2(nn.Module):
         # make hidden states on same device as model
         param = next(self.parameters())
         self.reset = True
-        return param.new_zeros(1, self.args.h_dim)
+        return param.new_zeros(1, self.args.gnn_dim)
     
     def forward(self, inputs, hidden_state=None):
         x = self.base(inputs)

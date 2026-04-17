@@ -15,7 +15,7 @@ class MLPAgent(nn.Module):
                 self.fc_layers.append(nn.LayerNorm(args.h_dim))
             input_shape = args.h_dim
         self.base = nn.Sequential(*self.fc_layers)
-        self.act_prob = nn.Linear(args.h_dim, args.n_actions)
+        self.act_prob = nn.Linear(input_shape, args.n_actions)
         print(f"\n\nDEBUG: total number of PARAMETERS for MLPAgent: {sum(p.numel() for p in self.parameters())} #####\n\n")
 
     # not used in this agent architecture

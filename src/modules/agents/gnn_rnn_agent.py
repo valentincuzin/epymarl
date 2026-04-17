@@ -13,6 +13,15 @@ class GnnRnnAgent(nn.Module):
         super(GnnRnnAgent, self).__init__()
         self.args = args
 
+        self.fc_layers = []
+        for n in range(args.n_layers):
+            self.fc_layers.append(nn.Linear(input_shape, args.h_dim))
+            self.fc_layers.append(nn.ReLU())
+            if args.layer_norm:
+                self.fc_layers.append(nn.LayerNorm(args.h_dim))
+            input_shape = args.h_dim
+        self.base = nn.Sequential(*self.fc_layers)
+
         # comm modules:
         self.gnns: MessagePassing = GATv2Conv(input_shape, 
                                               args.gnn_dim, 
@@ -24,7 +33,7 @@ class GnnRnnAgent(nn.Module):
         self.rnn = nn.GRUCell(args.gnn_dim, args.mem_dim)
 
         self.act_prob = nn.Sequential(
-            nn.LayerNorm(args.mem_dim) if args.layer_norm else [],
+            nn.LayerNorm(args.mem_dim) if args.layer_norm else nn.Identity(),
             nn.Linear(args.mem_dim, args.n_actions)
         )
         print(f"\n--- GnnRnnAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n", self, "\n\n")
@@ -40,16 +49,15 @@ class GnnRnnAgent(nn.Module):
         return self.hidden_states
 
     def forward(self, inputs, hidden_states):
-        h = self._communication_process(inputs, hidden_states)
+        x = self.base(inputs)
+        h = self._communication_process(inputs, x, hidden_states)
         q = self.act_prob(h)
         return q, h
 
-    def _communication_process(self, inputs, hidden_states):
+    def _communication_process(self, inputs, x, hidden_states):
         graphs = self._select_communication(inputs)
+        graphs.x = x
         h = F.relu(self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr if self.args.edge_attr else None))
-        # h = th.cat(  # skip connection like CD-GCN does
-        #         (h, x), dim=1
-        #     )
         h_in = hidden_states.reshape(-1, self.args.mem_dim)
         h = self.rnn(h, h_in)
         return h

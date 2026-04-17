@@ -5,16 +5,28 @@ mask_before_softmax: True
 
 runner: "parallel"
 
-buffer_size: 32
-batch_size: 32
+buffer_size: 48
+batch_size: 48
+
+# Communication setting
+comm_range: 0.5
+env_args:
+  visual_comm_range: 0.5  # must be the same as comm_range parameter
+
+n_heads_gat: 3
+dropout_gat: 0.25
+residual_gat: True
+edge_attr: False
 
 # update the target network every {} training steps
-target_update_interval_or_tau: 0.01
+target_update_interval_or_tau: 0.1
 
-lr: 0.0003
-h_dim: 128
+lr: 0.0006
+h_dim: 192
+gnn_dim: 256
+mem_dim: 384
 layer_norm: True
-n_layers: 2
+n_layers: 1
 
 obs_agent_id: True
 obs_last_action: False
@@ -23,13 +35,13 @@ obs_individual_obs: False  # always verify the state content (often concat of in
 # use IA2C
 agent_output_type: "pi_logits"
 learner: "ppo_learner"
-entropy_coef: 0.01
-standardise_returns: True
+entropy_coef: 0.1
+standardise_returns: False
 standardise_rewards: True  # always True i thinks
-q_nstep: 6 # 1 corresponds to normal r + gammaV
+q_nstep: 5 # 1 corresponds to normal r + gammaV
 critic_type: "cv_critic"
 epochs: 10
-eps_clip: 0.1
+eps_clip: 0.2
 
 name: "g-r-mappo"
-agent: "gnn_rnn" 
+agent: "gnn_rnn"

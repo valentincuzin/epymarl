@@ -2,14 +2,15 @@
 
 import torch as th
 import torch.nn as nn
-import torch.nn.functional as F
 
 from torch.nn.parameter import Parameter
 import math
+from types import SimpleNamespace as SN
 
 # PYG
 from utils.gnn_utils import batch_from_dense_to_ptg
 from torch_geometric.utils import to_dense_adj
+
 
 class EGCNAgent(nn.Module):
     def __init__(self, input_shape, args):
@@ -25,79 +26,37 @@ class EGCNAgent(nn.Module):
             input_shape = args.h_dim
         self.base = nn.Sequential(*self.fc_layers)
         # comm modules:
-        egcn_args = Namespace(
-            {
-                "feats_per_node": args.h_dim,
-                "layer_1_feats": 2*args.h_dim,
-            }
-        )
-        self.egcns = EGCN(egcn_args, activation=nn.ReLU(), skipfeats=True)
+        egcn_args = {
+            "feats_per_node": input_shape,
+            "layer_1_feats": args.gnn_dim,
+        }
+        for n in range(args.n_g_layers):
+            egcn_args[f"layer_{n}_feats"] = args.gnn_dim
+        self.egcns = EGCN(egcn_args, activation=nn.ReLU(), skipfeats=args.skipfeats)
 
         self.act_prob = nn.Sequential(
-            nn.LayerNorm(2*args.h_dim+args.h_dim) if args.layer_norm else [],
-            nn.Linear(2*args.h_dim+args.h_dim, args.n_actions)
+            nn.LayerNorm(args.gnn_dim + (input_shape if args.skipfeats else 0))
+            if args.layer_norm
+            else nn.Identity(),
+            nn.Linear(
+                args.gnn_dim + (input_shape if args.skipfeats else 0), args.n_actions
+            ),
         )
-        print(f"\n--- EGCNAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n", self, "\n\n")
+        print(
+            f"\n--- EGCNAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n",
+            self,
+            "\n\n",
+        )
 
-    def init_hidden(self):
+    def init_hidden(self, batch_size, n_agents):
         # make hidden states on same device as model
         param = next(self.parameters())
-        return param.new_zeros(1, self.args.h_dim)
-
-    def forward(self, inputs, hidden_states):
-        x = self.base(inputs)
-        h = self._communication_process(inputs, x)
-        q = self.act_prob(h)
-        return q, h
-
-    def _communication_process(self, inputs, x):
-        graphs = self._select_communication(inputs)
-        graphs.x = x
-        dense_adj = to_dense_adj(
-            graphs.edge_index,
-            max_num_nodes=graphs.max_num_nodes,
-        ).squeeze()
-        h = self.egcns(dense_adj, graphs.x)
-        return h
-
-    def _select_communication(self, x):
-        graphs = batch_from_dense_to_ptg(x, self.args.batch_size, self.args)
-        return graphs
-    
-
-class EGCNAgentV2(nn.Module):
-    def __init__(self, input_shape, args):
-        super(EGCNAgentV2, self).__init__()
-        self.args = args
-
-        self.fc_layers = []
-        for n in range(args.n_layers):
-            self.fc_layers.append(nn.Linear(input_shape, args.h_dim))
-            self.fc_layers.append(nn.ReLU())
-            if args.layer_norm:
-                self.fc_layers.append(nn.LayerNorm(args.h_dim))
-            input_shape = args.h_dim
-        self.base = nn.Sequential(*self.fc_layers)
-        # comm modules:
-        egcn_args = Namespace(
-            {
-                "feats_per_node": args.h_dim,
-                "layer_1_feats": 2*args.h_dim,
-                "layer_2_feats": 2*args.h_dim,
-            }
-        )
-        self.egcns = EGCN(egcn_args, activation=nn.ReLU(), skipfeats=True)
-
-        self.act_prob = nn.Sequential(
-            nn.LayerNorm(2*args.h_dim+args.h_dim) if args.layer_norm else [],
-            nn.Linear(2*args.h_dim+args.h_dim, args.n_actions)
-        )
-        print(f"\n--- EGCNAgentV2 {sum(p.numel() for p in self.parameters())} parameters --- \n\n", self, "\n\n")
-
-    def init_hidden(self):
-        # make hidden states on same device as model
-        param = next(self.parameters())
-        return param.new_zeros(1, self.args.h_dim)
+        self.hidden_states = (
+            param.new_zeros(1, self.args.gnn_dim)
+            .unsqueeze(0)
+            .expand(batch_size, n_agents, -1)
+        )  # bav
+        return self.hidden_states
 
     def forward(self, inputs, hidden_states):
         x = self.base(inputs)
@@ -122,17 +81,16 @@ class EGCNAgentV2(nn.Module):
 
 # Code from EvolveGCN-o https://github.com/IBM/EvolveGCN/blob/master/egcn_o.py
 class EGCN(nn.Module):
-    def __init__(self, args, activation, device="cpu", skipfeats=False):
+    def __init__(self, args: dict, activation, device="cpu", skipfeats=False):
         super().__init__()
-        GRCU_args = Namespace({})
 
-        feats = [args.feats_per_node, args.layer_1_feats]
+        feats = list(args.values())
         self.device = device
         self.skipfeats = skipfeats
-        self.GRCU_layers =  nn.ModuleList()
+        self.GRCU_layers = nn.ModuleList()
         for i in range(1, len(feats)):
-            GRCU_args = Namespace(
-                {
+            GRCU_args = SN(
+                **{
                     "in_feats": feats[i - 1],
                     "out_feats": feats[i],
                     "activation": activation,
@@ -140,7 +98,6 @@ class EGCN(nn.Module):
             )
 
             grcu_i = GRCU(GRCU_args)
-            # print (i,'grcu_i', grcu_i)
             self.GRCU_layers.append(grcu_i.to(self.device))
 
     def forward(self, A_list, Nodes_list, nodes_mask_list=None):
@@ -160,7 +117,7 @@ class GRCU(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
-        cell_args = Namespace({})
+        cell_args = SN()
         cell_args.rows = args.in_feats
         cell_args.cols = args.out_feats
 
@@ -272,15 +229,6 @@ class TopK(nn.Module):
 
         # we need to transpose the output
         return out.t()
-
-
-class Namespace(object):
-    """
-    helps referencing object in a dictionary as dict.key instead of dict['key']
-    """
-
-    def __init__(self, adict):
-        self.__dict__.update(adict)
 
 
 def pad_with_last_val(vect, k):

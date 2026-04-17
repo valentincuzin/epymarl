@@ -40,6 +40,20 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_gnn_settings(trial, param)
         case "gnn_v2":
             param = hp.hp_gnn_settings(trial, param)
+        case "gnn_rnn":
+            param = hp.hp_gnn_rnn_settings(trial, param)
+        case "rnn_gnn":  # same as gnn_rnn
+            param = hp.hp_gnn_rnn_settings(trial, param)
+        case "mlp_gnn_rnn":
+            param = hp.hp_mlp_settings(trial, param)
+            param = hp.hp_rnn_settings(trial, param)
+            param = hp.hp_gnn_settings(trial, param)
+        case "mlp_rnn_gnn":
+            param = hp.hp_mlp_settings(trial, param)
+            param = hp.hp_rnn_settings(trial, param)
+            param = hp.hp_gnn_settings(trial, param)
+        case "egcn":
+            param = hp.hp_egcn_settings(trial, param)
     param["seed"] = 42  # set to 42 to reproductibility and unbiased by seed during test
     param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
@@ -65,7 +79,7 @@ def _run_optim(args_dict, _log):
     sampler = optuna.samplers.TPESampler(
         multivariate=True, warn_independent_sampling=False, seed=42
     )
-    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=1)
+    pruner = optuna.pruners.MedianPruner(n_warmup_steps=5)
     study = optuna.create_study(
         study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),

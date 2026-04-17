@@ -5,16 +5,26 @@ mask_before_softmax: True
 
 runner: "parallel"
 
-buffer_size: 32
-batch_size: 32
+buffer_size: 48
+batch_size: 48
+
+
+# Communication setting
+comm_range: 0.5
+env_args:
+  visual_comm_range: 0.5  # must be the same as comm_range parameter
+
 
 # update the target network every {} training steps
 target_update_interval_or_tau: 0.01
 
 lr: 0.0003
 h_dim: 128
+gnn_dim: 256
+skipfeats: False
 layer_norm: True
 n_layers: 2
+n_g_layers: 1
 
 obs_agent_id: True
 obs_last_action: False

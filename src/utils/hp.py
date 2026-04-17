@@ -79,6 +79,33 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
 
     return hp
 
+def hp_qmix_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for classic qmix train process
+
+    Args:
+        trial (Trial): 
+        hp (dict): 
+
+    Returns:
+        dict: updated params
+    """
+    hp["lr"] = trial.suggest_float("lr", 1e-6, 0.1, log=True)
+    hp["epsilon_start"] = trial.suggest_float("epsilon_start", 0.8, 1.0)
+    hp["epsilon_finish"] = trial.suggest_float("epsilon_finish", 0.01, 0.1)
+    hp["epsilon_anneal_time"] = trial.suggest_categorical("epsilon_anneal_time", [10000, 50000, 100000])
+
+    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [False, True])
+    hp["target_update_interval_or_tau"] = trial.suggest_int("target_update_interval_or_tau", 50, 500, step=50)
+
+    hp["batch_size"] = trial.suggest_int("batch_size", 16, 128, step=16)
+    hp["buffer_size"] = trial.suggest_int("buffer_size", 5000, 20000, step=5000)
+
+    hp["mixing_embed_dim"] = trial.suggest_int("mixing_embed_dim", 32, 256, step=32)
+    hp["hypernet_layers"] = trial.suggest_int("hypernet_layers", 1, 2)
+    hp["hypernet_embed"] = trial.suggest_int("hypernet_embed", 64, 512, step=64)
+    return hp
+
 def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for mlp architecture

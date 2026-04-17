@@ -30,7 +30,10 @@ import utils.hp as hp
 
 def _objective(trial, args_dict, _log):
     param = copy.deepcopy(args_dict)
-    param = hp.hp_mappo_settings(trial, param)
+    if "qmix" in param["name"]:
+        param = hp.hp_qmix_settings(trial, param)
+    else:
+        param = hp.hp_mappo_settings(trial, param)
     match param["agent"]:
         case "mlp":
             param = hp.hp_mlp_settings(trial, param)

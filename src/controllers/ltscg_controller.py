@@ -14,7 +14,7 @@ class LTSCG_GraphMAC(BasicMAC):
         super().__init__(scheme, groups, args)
         # self.residual = args.residual
         self.args = args
-        self.n_gcn_layers = args.number_gcn_layers
+        self.n_gcn_layers = args.n_g_layers
         self.dicg_layers = []
         self.dicg_emb_hid = args.dicg_emb_hid
         # original input shape: obs + actions + agents : 10m vs 11m :105+17+10=132

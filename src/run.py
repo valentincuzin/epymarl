@@ -34,6 +34,8 @@ def _objective(trial, args_dict, _log):
         param = hp.hp_qmix_settings(trial, param)
     elif "ltscg" in param["name"]:
         param = hp.hp_ltscg_settings(trial, param)
+    elif "dicg" in param["name"]:
+        param = hp.hp_dicg_settings(trial, param)
     else:
         param = hp.hp_mappo_settings(trial, param)
     match param["agent"]:

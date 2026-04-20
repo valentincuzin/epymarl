@@ -22,7 +22,7 @@ class LTSCGLearner(QLearner):
         self.graph_learner = graph_learner.cuda() if th.cuda.is_available() else graph_learner
         input_shape = args.obs_shape + 1
         ################## for state #######################
-        self.n_gcn_layers = args.number_gcn_layers
+        self.n_gcn_layers = args.n_g_layers
         self.graph_emb_dim = args.state_shape
         self.graph_emb_hid = args.graph_emb_hid
         self.graph_input_obs_MLP = self._mlp(input_shape, self.graph_emb_hid, self.graph_emb_dim)

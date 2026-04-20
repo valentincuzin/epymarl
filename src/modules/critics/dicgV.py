@@ -20,7 +20,7 @@ class DicgVCritic(nn.Module):
 
         # Set up network layers
         self.residual = args.residual
-        self.n_gcn_layers = args.number_gcn_layers
+        self.n_gcn_layers = args.n_g_layers
         self.dicg_layers = []
         self.dicg_emb_hid = args.dicg_emb_hid
         self.dicg_emb_dim = input_shape

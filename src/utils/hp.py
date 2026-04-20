@@ -108,7 +108,7 @@ def hp_qmix_settings(trial: Trial, hp: dict) -> dict:
 
 def hp_ltscg_settings(trial: Trial, hp: dict) -> dict:
     """
-    suggest params for classic qmix train process
+    suggest params for classic ltscg train process
 
     Args:
         trial (Trial): 
@@ -121,7 +121,7 @@ def hp_ltscg_settings(trial: Trial, hp: dict) -> dict:
     hp["dicg_emb_hid"] = trial.suggest_int("dicg_emb_hid", 64, 512, step=64)
     hp["concate_mlp_dim"] = trial.suggest_int("concate_mlp_dim", 5, 20, step=5)
     hp["gcn_message_dim"] = trial.suggest_int("gcn_message_dim", 5, 20, step=5)
-    hp["number_gcn_layers"] = trial.suggest_int("number_gcn_layers", 1, 2)
+    hp["n_g_layers"] = trial.suggest_int("n_g_layers", 1, 2)
 
     hp["mlp_emb_hid"] = trial.suggest_int("mlp_emb_hid", 64, 512, step=64)
     hp["mlp_out"] = trial.suggest_int("mlp_out", 32, 256, step=32)
@@ -129,6 +129,23 @@ def hp_ltscg_settings(trial: Trial, hp: dict) -> dict:
     hp["gtsmodel"]["rnn_units"] = trial.suggest_int("gtsmodel, rnn_units", 64, 512, step=64)
     return hp
 
+def hp_dicg_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for classic dicg-de-mappo train process
+
+    Args:
+        trial (Trial): 
+        hp (dict): 
+
+    Returns:
+        dict: updated params
+    """
+    hp = hp_mappo_settings(trial, hp)
+    hp["dicg_emb_hid"] = trial.suggest_int("dicg_emb_hid", 64, 512, step=64)
+    hp["n_g_layers"] = trial.suggest_int("n_g_layers", 1, 2)
+    hp["residual"] = trial.suggest_categorical("residual", [False, True])
+
+    return hp
 
 def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     """

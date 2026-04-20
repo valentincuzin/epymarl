@@ -28,7 +28,7 @@ obs_individual_obs: False
 dicg_emb_hid: 128
 concate_mlp_dim: 10
 gcn_message_dim: 10
-number_gcn_layers: 2
+n_g_layers: 2
 concate_gcn: True
 concate_mlp: True
 graph_loss_weight: 1

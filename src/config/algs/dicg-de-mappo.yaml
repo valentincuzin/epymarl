@@ -23,7 +23,7 @@ obs_individual_obs: False
 
 # DICG graph
 dicg_emb_hid: 128
-number_gcn_layers: 2
+n_g_layers: 2
 residual: True
 
 

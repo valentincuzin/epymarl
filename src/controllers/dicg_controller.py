@@ -12,7 +12,7 @@ class DICGraphMAC(BasicMAC):
     def __init__(self, scheme, groups, args):
         super().__init__(scheme, groups, args)
         self.residual = args.residual
-        self.n_gcn_layers = args.number_gcn_layers
+        self.n_gcn_layers = args.n_g_layers
         self.dicg_layers = []
         self.dicg_emb_hid = args.dicg_emb_hid
         input_shape = self._get_input_shape(scheme)

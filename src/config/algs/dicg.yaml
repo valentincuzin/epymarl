@@ -1,4 +1,4 @@
-# --- LTSCG specific parameters ---
+# --- DICG specific parameters ---
 
 # use epsilon greedy action selector
 action_selector: "epsilon_greedy"
@@ -24,14 +24,10 @@ obs_agent_id: True
 obs_last_action: True
 obs_individual_obs: False
 
-# LTSCG graph
+# DICG graph
 dicg_emb_hid: 128
-concate_mlp_dim: 10
-gcn_message_dim: 10
 number_gcn_layers: 2
-concate_gcn: True
-concate_mlp: True
-graph_loss_weight: 1
+residual: True
 
 
 # use the Q_Learner to train / QMIX as baseline
@@ -39,8 +35,8 @@ standardise_returns: False
 standardise_rewards: True
 
 agent_output_type: "q"
-learner: "LTSCG_learner"
-mac: "Ltscg_mac"    
+learner: "q_learner"
+mac: "dicg_mac"    
 double_q: True
 mixer: "qmix"
 
@@ -48,25 +44,6 @@ mixing_embed_dim: 32
 hypernet_layers: 2
 hypernet_embed: 64
 
-graph_emb_hid: 128
-mlp_emb_hid: 64
-mlp_out: 32
-# GTS_model
-gtsmodel:
-  cl_decay_steps: 2000
-  filter_type: dual_random_walk
-  horizon: 12
-  input_dim: 2
-  l1_decay: 0
-  max_diffusion_step: 3
-  num_nodes: 207
-  num_rnn_layers: 1
-  output_dim: 1
-  rnn_units: 64
-  seq_len: 12
-  use_curriculum_learning: true
-  dim_fc: 383552
 
-
-name: "ltscg"
+name: "dicg"
 agent: "mlp"

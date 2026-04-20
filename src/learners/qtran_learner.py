@@ -199,7 +199,7 @@ class QLearner:
 
         if (
             episode_num - self.last_target_update_episode
-        ) / self.args.target_update_interval >= 1.0:
+        ) / self.args.target_update_interval_or_tau >= 1.0:
             self._update_targets()
             self.last_target_update_episode = episode_num
 

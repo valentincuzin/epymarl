@@ -138,7 +138,7 @@ class LTSCGLearner(QLearner):
         grad_norm = th.nn.utils.clip_grad_norm_(self.params, self.args.grad_norm_clip)
         self.optimiser.step()
 
-        if (episode_num - self.last_target_update_episode) / self.args.target_update_interval >= 1.0:
+        if (episode_num - self.last_target_update_episode) / self.args.target_update_interval_or_tau >= 1.0:
             self._update_targets_hard()
             self.last_target_update_episode = episode_num
         if t_env - self.log_stats_t >= self.args.learner_log_interval:

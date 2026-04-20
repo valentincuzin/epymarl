@@ -1,18 +1,18 @@
 action_selector: soft_policies
 add_value_last_step: true
-agent: gnn
+agent: gnn_rnn
 agent_output_type: pi_logits
-batch_size: 48
+batch_size: 64
 buffer_cpu_only: false
-buffer_size: 48
+buffer_size: 64
 checkpoint_path: ''
 comm_range: 0.5
 common_reward: true
 critic_type: cv_critic
 device: cuda
-dropout_gat: 0.5
+dropout_gat: 0.25
 edge_attr: true
-entropy_coef: 0.08942662144831295
+entropy_coef: 0.07056189387174949
 env: gymma
 env_args:
     dynamic_rescaling: true
@@ -27,13 +27,13 @@ env_args:
     seed: 0
     time_limit: 100
     visual_comm_range: 0.5
-epochs: 14
-eps_clip: 0.03751881789527971
+epochs: 8
+eps_clip: 0.0696193256111669
 evaluate: false
 gamma: 0.99
-gnn_dim: 128
-grad_norm_clip: 19
-h_dim: 128
+gnn_dim: 512
+grad_norm_clip: 7
+h_dim: 192
 hp_search: 25
 hypergroup: null
 label: default_label
@@ -43,12 +43,13 @@ learner_log_interval: 10000
 load_step: 0
 local_results_path: results
 log_interval: 50000
-lr: 0.002485950498588194
+lr: 0.0015866002239707756
 mac: basic_mac
 mask_before_softmax: true
-n_heads_gat: 1
+mem_dim: 128
+n_heads_gat: 3
 n_layers: 0
-name: g-mappo
+name: g-r-mappo
 obs_agent_id: true
 obs_individual_obs: false
 obs_last_action: false
@@ -68,11 +69,11 @@ seed: 0
 standardise_returns: false
 standardise_rewards: true
 t_max: 2050000
-target_update_interval_or_tau: 0.23338934672101358
+target_update_interval_or_tau: 0.8933741610646831
 test_greedy: true
 test_interval: 50000
 test_nepisode: 96
-unique_token: g-mappo_seed0_mpe2-simple-tag-v3_2026-04-17 16:22:22.049711
+unique_token: g-r-mappo_seed0_mpe2-simple-tag-v3_2026-04-18 03:39:50.177982
 use_cuda: true
 use_tensorboard: false
 use_wandb: true

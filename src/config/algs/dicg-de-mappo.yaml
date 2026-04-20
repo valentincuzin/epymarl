@@ -1,0 +1,43 @@
+# --- DICG specific parameters ---
+
+# use epsilon greedy action selector
+action_selector: "soft_policies"
+mask_before_softmax: True
+
+runner: "parallel"
+
+batch_size: 32
+buffer_size: 32
+
+# update the target network every {} episodes
+target_update_interval_or_tau: 0.01
+
+lr: 0.0003
+h_dim: 128
+layer_norm: True
+n_layers: 2
+
+obs_agent_id: True
+obs_last_action: False
+obs_individual_obs: False
+
+# DICG graph
+dicg_emb_hid: 128
+number_gcn_layers: 2
+residual: True
+
+
+# use the Q_Learner to train / QMIX as baseline
+standardise_returns: False
+standardise_rewards: True
+
+agent_output_type: "pi_logits"
+learner: "ppo_learner"
+entropy_coef: 0.01
+q_nstep: 6 # 1 corresponds to normal r + gammaV
+critic_type: "dicg_critic"
+epochs: 10
+eps_clip: 0.1
+
+name: "dicg"
+agent: "mlp"

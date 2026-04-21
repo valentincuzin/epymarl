@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=dicg-de-mappo-hp    # Nom du job
-#SBATCH --output=dicg-de-mappo-hp_%j.log   # Standard output et error log
+#SBATCH --job-name=eg-mappo    # Nom du job
+#SBATCH --output=eg-mappo_%j.log   # Standard output et error log
 
 #SBATCH --gres=gpu:1              # Number of GPUs
 #SBATCH --cpus-per-task=1             # Utiliser un seul CPU pour cette tâche (job)
@@ -21,4 +21,4 @@ micromamba activate p313
 
 cd ~/epymarl/
 # run Python script
-python src/main.py --hp_search=25 --seed=0 --config=dicg-de-mappo --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="RandomTag"
+python src/main.py --seed=2 --config=eg-mappo --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="RandomTag"

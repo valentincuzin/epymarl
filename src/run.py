@@ -32,6 +32,10 @@ def _objective(trial, args_dict, _log):
     param = copy.deepcopy(args_dict)
     if "qmix" in param["name"]:
         param = hp.hp_qmix_settings(trial, param)
+    elif "ltscg" in param["name"]:
+        param = hp.hp_ltscg_settings(trial, param)
+    elif "dicg" in param["name"]:
+        param = hp.hp_dicg_settings(trial, param)
     else:
         param = hp.hp_mappo_settings(trial, param)
     match param["agent"]:
@@ -194,6 +198,8 @@ def run_sequential(args, logger):
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
     args.state_shape = env_info["state_shape"]
+    args.obs_shape = env_info["obs_shape"]
+    args.episode_limit = env_info["episode_limit"]
 
     # Default/Base scheme
     scheme = {
@@ -295,12 +301,15 @@ def run_sequential(args, logger):
 
             # Truncate batch to only filled timesteps
             max_ep_t = episode_sample.max_t_filled()
-            episode_sample = episode_sample[:, :max_ep_t]
+            batch = episode_sample[:, :max_ep_t]
 
-            if episode_sample.device != args.device:
-                episode_sample.to(args.device)
+            if batch.device != args.device:
+                batch.to(args.device)
 
-            learner.train(episode_sample, runner.t_env, episode)
+            if args.name == "ltscg":
+                learner.train(episode_sample, runner.t_env, episode)
+            else:
+                learner.train(batch, runner.t_env, episode)
 
         # Execute test runs once in a while
         n_test_runs = max(1, args.test_nepisode // runner.batch_size)

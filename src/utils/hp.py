@@ -106,6 +106,47 @@ def hp_qmix_settings(trial: Trial, hp: dict) -> dict:
     hp["hypernet_embed"] = trial.suggest_int("hypernet_embed", 64, 512, step=64)
     return hp
 
+def hp_ltscg_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for classic ltscg train process
+
+    Args:
+        trial (Trial): 
+        hp (dict): 
+
+    Returns:
+        dict: updated params
+    """
+    hp = hp_qmix_settings(trial, hp)
+    hp["dicg_emb_hid"] = trial.suggest_int("dicg_emb_hid", 64, 512, step=64)
+    hp["concate_mlp_dim"] = trial.suggest_int("concate_mlp_dim", 5, 20, step=5)
+    hp["gcn_message_dim"] = trial.suggest_int("gcn_message_dim", 5, 20, step=5)
+    hp["n_g_layers"] = trial.suggest_int("n_g_layers", 1, 2)
+
+    hp["mlp_emb_hid"] = trial.suggest_int("mlp_emb_hid", 64, 512, step=64)
+    hp["mlp_out"] = trial.suggest_int("mlp_out", 32, 256, step=32)
+
+    hp["gtsmodel"]["rnn_units"] = trial.suggest_int("gtsmodel, rnn_units", 64, 512, step=64)
+    return hp
+
+def hp_dicg_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for classic dicg-de-mappo train process
+
+    Args:
+        trial (Trial): 
+        hp (dict): 
+
+    Returns:
+        dict: updated params
+    """
+    hp = hp_mappo_settings(trial, hp)
+    hp["dicg_emb_hid"] = trial.suggest_int("dicg_emb_hid", 64, 512, step=64)
+    hp["n_g_layers"] = trial.suggest_int("n_g_layers", 1, 2)
+    hp["residual"] = trial.suggest_categorical("residual", [False, True])
+
+    return hp
+
 def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for mlp architecture
@@ -199,7 +240,6 @@ def hp_egcn_settings(trial: Trial, hp: dict) -> dict:
     if hp["n_layers"] > 0:
         hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
-    hp["n_g_layers"] = trial.suggest_int("n_g_layers", 1, 2)
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["skipfeats"] = trial.suggest_categorical("skipfeats", [False, True])
     return hp

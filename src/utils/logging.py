@@ -3,6 +3,7 @@ from hashlib import sha256
 import json
 import logging
 
+import torch as th
 import numpy as np
 
 
@@ -109,6 +110,27 @@ class Logger:
                 self.sacred_info[key] = [value]
 
             self._run_obj.log_scalar(key, value, t)
+
+    def log_matrix(self, key, matrix, t, to_sacred=True):
+        """
+        Log a 2D matrix.
+        
+        key (str): Name of the matrix.
+        matrix (numpy.ndarray or torch.Tensor): The matrix to log.
+        t (int): The current timestep.
+        to_sacred (bool): Whether to log to sacred.
+        """
+        if isinstance(matrix, th.Tensor):
+            # If the matrix is a torch tensor, convert it to numpy array first
+            matrix = matrix.detach().cpu().numpy()
+        # Convert the matrix to a list of lists, because numpy arrays are not JSON serializable
+        matrix_list = matrix.tolist()
+
+        if self.use_sacred and to_sacred:
+            if key in self.sacred_info:
+                self.sacred_info[key].append((t, matrix_list))
+            else:
+                self.sacred_info[key] = [(t, matrix_list)]
 
     def print_recent_stats(self):
         log_str = "Recent Stats | t_env: {:>10} | Episode: {:>8}\n".format(

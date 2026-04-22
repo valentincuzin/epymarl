@@ -8,7 +8,7 @@ from .maddpg_learner import MADDPGLearner
 from .ppo_learner import PPOLearner
 
 from .LTSCG_learner import LTSCGLearner
-
+from .roland_learner import ROLANDLearner
 REGISTRY = {}
 REGISTRY["q_learner"] = QLearner
 REGISTRY["coma_learner"] = COMALearner
@@ -19,3 +19,4 @@ REGISTRY["ppo_learner"] = PPOLearner
 REGISTRY["pac_learner"] = PACActorCriticLearner
 REGISTRY["pac_dcg_learner"] = PACDCGLearner
 REGISTRY["LTSCG_learner"] = LTSCGLearner
+REGISTRY["roland_learner"] = ROLANDLearner

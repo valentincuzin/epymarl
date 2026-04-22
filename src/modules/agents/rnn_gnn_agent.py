@@ -49,6 +49,24 @@ class RnnGnnAgent(nn.Module):
         )  # bav
         return self.hidden_states
 
+    
+    def rpz_forward(self, inputs, hidden_states):
+        x = self.base(inputs)
+        h_in = hidden_states.reshape(-1, self.args.mem_dim)
+        h = self.rnn(x, h_in)
+        z = self._communication_process(inputs, h)
+        return z
+    
+    def rpz_params(self):
+        return (
+        list(self.base.parameters()) +
+        list(self.gnns.parameters()) +
+        list(self.rnn.parameters())
+    )
+
+    def act_params(self):
+        return self.act_prob.parameters()
+
     def forward(self, inputs, hidden_states):
         x = self.base(inputs)
         h_in = hidden_states.reshape(-1, self.args.mem_dim)

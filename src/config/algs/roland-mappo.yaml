@@ -22,12 +22,12 @@ edge_attr: False
 target_update_interval_or_tau: 0.1
 
 lr: 0.0006
-lr_roland: 0.0006
+obj2: 0.4
 h_dim: 192
 gnn_dim: 256
 mem_dim: 384
 layer_norm: True
-n_layers: 1
+n_layers: 0
 
 obs_agent_id: True
 obs_last_action: False
@@ -45,5 +45,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.2
 
-name: "roland-mappo"
+name: "roland-mappo_t5"
 agent: "rnn_gnn"

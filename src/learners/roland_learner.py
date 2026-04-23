@@ -18,7 +18,7 @@ class ROLANDLearner:
 
         self.mac = mac
         self.old_mac = copy.deepcopy(mac)
-        self.agent_params = list(mac.parameters())
+        self.agent_params = list(mac.agent.parameters())
         self.agent_optimiser = Adam(params=self.agent_params, lr=args.lr)
 
         self.critic = critic_resigtry[args.critic_type](scheme, args)
@@ -64,12 +64,15 @@ class ROLANDLearner:
         critic_mask = mask.clone()
 
         old_mac_out = []
+        pred_losses = 0
         self.old_mac.init_hidden(batch.batch_size)
+        # for t in range(batch.max_seq_length - 1):
+        #     self.old_mac.fine_tune(batch, t=t)
         for t in range(batch.max_seq_length - 1):
-            self.old_mac.fine_tune(batch, t=t)
-        for t in range(batch.max_seq_length - 1):
-            agent_outs = self.old_mac.forward(batch, t=t)
+            agent_outs, t_loss = self.old_mac.forward(batch, t=t)
+            pred_losses += t_loss
             old_mac_out.append(agent_outs)
+        pred_losses /= batch.max_seq_length
         with th.no_grad():
             old_pi = th.stack(old_mac_out, dim=1)  # Concat over time
             old_pi = old_pi.masked_fill(mask.unsqueeze(-1) == 0, 1.0)  # old_pi[mask == 0] = 1.0
@@ -82,7 +85,7 @@ class ROLANDLearner:
             mac_out = []
             self.mac.init_hidden(batch.batch_size)
             for t in range(batch.max_seq_length - 1):
-                agent_outs = self.mac.forward(batch, t=t)
+                agent_outs = self.mac.forward(batch, t=t, test_mode=True)
                 mac_out.append(agent_outs)
             pi = th.stack(mac_out, dim=1)  # Concat over time
 
@@ -111,11 +114,11 @@ class ROLANDLearner:
                 ).sum()
                 / mask.sum()
             )
-
+            final_loss = (1-self.args.obj2)* pg_loss + self.args.obj2 * pred_losses
             # Optimise agents
             th.cuda.empty_cache()
             self.agent_optimiser.zero_grad()
-            pg_loss.backward()
+            final_loss.backward(retain_graph=True)
             grad_norm = th.nn.utils.clip_grad_norm_(
                 self.agent_params, self.args.grad_norm_clip
             )
@@ -154,6 +157,8 @@ class ROLANDLearner:
                 t_env,
             )
             self.logger.log_stat("pg_loss", pg_loss.item(), t_env)
+            self.logger.log_stat("pred_losses", pred_losses.item(), t_env)
+            self.logger.log_stat("final_loss", final_loss.item(), t_env)
             self.logger.log_stat("agent_grad_norm", grad_norm.item(), t_env)
             self.logger.log_stat(
                 "pi_max",

@@ -23,7 +23,7 @@ h_dim: 128
 gnn_dim: 256
 skipfeats: False
 layer_norm: True
-n_layers: 2
+n_layers: 0
 n_g_layers: 1
 
 obs_agent_id: True
@@ -41,5 +41,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.1
 
-name: "eg-mappo"
+name: "eg-mappo_v2"
 agent: "egcn" 

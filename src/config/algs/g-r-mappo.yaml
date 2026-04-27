@@ -26,7 +26,7 @@ h_dim: 192
 gnn_dim: 256
 mem_dim: 384
 layer_norm: True
-n_layers: 1
+n_layers: 0
 
 obs_agent_id: True
 obs_last_action: False
@@ -43,5 +43,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.2
 
-name: "g-r-mappo"
+name: "g-r-mappo_v2"
 agent: "gnn_rnn"

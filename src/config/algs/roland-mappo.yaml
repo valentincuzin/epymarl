@@ -1,4 +1,4 @@
-# --- MAPPO specific parameters ---
+# --- ROLAND specific parameters ---
 
 action_selector: "soft_policies"
 mask_before_softmax: True
@@ -22,8 +22,10 @@ edge_attr: False
 target_update_interval_or_tau: 0.1
 
 lr: 0.0006
+obj2: 0.4
 h_dim: 192
 gnn_dim: 256
+mem_dim: 384
 layer_norm: True
 n_layers: 0
 
@@ -33,7 +35,8 @@ obs_individual_obs: False  # always verify the state content (often concat of in
 
 # use IA2C
 agent_output_type: "pi_logits"
-learner: "ppo_learner"
+learner: "roland_learner"
+mac: "roland_mac"
 entropy_coef: 0.1
 standardise_returns: False
 standardise_rewards: True  # always True i thinks
@@ -42,5 +45,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.2
 
-name: "g-mappo_v2"
-agent: "gnn"
+name: "roland-mappo_t5"
+agent: "rnn_gnn"

@@ -59,7 +59,7 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     # old todo: prove the improvment of this component => better
     # Add relative coordonate and distance in edge_attr in all the graph
     if pos is not None:
-        graphs = pyg.transforms.Cartesian(norm=False)(graphs)
+        graphs = pyg.transforms.Cartesian(norm=False)(graphs)  # test to remove
         graphs = pyg.transforms.Distance(norm=False)(graphs)
     # old todo: prove the improvment of this component => worst
     # Create relative velocity

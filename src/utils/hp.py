@@ -190,9 +190,9 @@ def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
-    if hp["n_layers"] > 0:
-        hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
+    # hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
+    hp["n_layers"] = 0
+    hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["n_heads_gat"] = trial.suggest_int("n_heads_gat", 1, 3)
@@ -212,9 +212,9 @@ def hp_gnn_rnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
-    if hp["n_layers"] > 0:
-        hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
+    # hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
+    hp["n_layers"] = 0
+    hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["n_heads_gat"] = trial.suggest_int("n_heads_gat", 1, 3)
@@ -236,9 +236,9 @@ def hp_egcn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
-    if hp["n_layers"] > 0:
-        hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
+    # hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
+    hp["n_layers"] = 0
+    hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["skipfeats"] = trial.suggest_categorical("skipfeats", [False, True])

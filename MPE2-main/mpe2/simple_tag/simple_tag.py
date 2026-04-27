@@ -251,7 +251,14 @@ class Scenario(BaseScenario):
             landmark.boundary = False
         return world
 
+    def _reset_agent(self, agent: Agent, world):
+        assert not agent.adversary, "_reset_agent is not made for adversary"
+        agent.state.p_pos = self.np_random.uniform(-1, +1, world.dim_p)
+        agent.state.p_vel = np.zeros(world.dim_p)
+        agent.state.c = np.zeros(world.dim_c)
+
     def reset_world(self, world, np_random):
+        self.np_random = np_random
         # random properties for agents
         for i, agent in enumerate(world.agents):
             agent.color = (
@@ -292,10 +299,10 @@ class Scenario(BaseScenario):
         else:
             return 0
 
-    def is_collision(self, agent1, agent2):
+    def is_collision(self, agent1, agent2, eps=0):
         delta_pos = agent1.state.p_pos - agent2.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
-        dist_min = agent1.size + agent2.size
+        dist_min = agent1.size + agent2.size + eps
         return True if dist < dist_min else False
 
     # return all agents that are not adversaries
@@ -358,9 +365,14 @@ class Scenario(BaseScenario):
                 )
         if agent.collide:
             for ag in agents:
-                for adv in adversaries:
-                    if self.is_collision(ag, adv):
-                        rew += 10
+                if self.is_collision(agent, ag):
+                    count = 1
+                    rew += 10
+                    for adv in adversaries:
+                        if adv.name != agent.name and self.is_collision(adv, ag, eps=0.25):
+                            count += 1
+                            if count <= int(len(adversaries)/len(agents)):
+                                rew += 10
         return rew
 
     def observation(self, agent, world):

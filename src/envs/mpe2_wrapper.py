@@ -53,6 +53,7 @@ class MPE2Wrapper(gym.Env):
             for k in self._env.agents
             for key, value in infos[k].items()
         }
+        print(info)
         if done:
             # empty obs and rewards for mpe environments on terminated episode
             assert len(obs) == 0

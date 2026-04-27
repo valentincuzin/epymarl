@@ -42,4 +42,4 @@ epochs: 10
 eps_clip: 0.1
 
 name: "eg-mappo_v2"
-agent: "egcn" 
+agent: "egcn"

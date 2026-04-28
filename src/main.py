@@ -56,6 +56,11 @@ def _get_config(params, arg_name, subfolder):
             del params[_i]
             break
 
+    # TODO tune the config
+    # if '_vs_' in config_name:
+    #     # two config to add
+    #     config_name_1, config_name_2 = config_name.split("_vs_")
+
     if config_name is not None:
         with open(
             os.path.join(

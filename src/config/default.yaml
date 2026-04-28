@@ -5,6 +5,7 @@ mac: "basic_mac" # Basic controller
 common_reward: True  # Run experiment with common reward setup
 reward_scalarisation: "sum"  # How to aggregate rewards to single common reward (only used if common_reward is True)
 
+competitive: True
 env_args: {
   num_good: 2,
   num_adversaries: 6,
@@ -22,7 +23,7 @@ seed: 0
 
 # --- Logging options ---
 use_tensorboard: False # Log results to tensorboard
-use_wandb: True # Log results to W&B
+use_wandb: False # Log results to W&B
 wandb_team: valentincuzin-ucbl1 # W&B team name
 wandb_project: epymarl_test_env # W&B project name
 wandb_mode: "online" # W&B mode (online/offline)

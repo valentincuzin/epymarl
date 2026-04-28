@@ -29,6 +29,9 @@ class MPE2Wrapper(gym.Env):
             tuple([self._env.observation_space(k) for k in self._env.agents])
         )
 
+    def get_env_info(self):
+        return self.env.get_env_info()
+
     def reset(self, *args, **kwargs):
         obs, info = self._env.reset(*args, **kwargs)
         obs = tuple([obs[k] for k in self._env.agents])

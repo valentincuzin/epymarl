@@ -196,6 +196,8 @@ def run_sequential(args, logger):
     # Set up schemes and groups here
     env_info = runner.get_env_info()
     args.n_agents = env_info["n_agents"]
+    args.n_predators = args.env_args["num_adversaries"]
+    args.n_preys = args.env_args["num_good"]
     args.n_actions = env_info["n_actions"]
     args.state_shape = env_info["state_shape"]
     args.obs_shape = env_info["obs_shape"]
@@ -215,10 +217,10 @@ def run_sequential(args, logger):
     }
     # For individual rewards in gymmai reward is of shape (1, n_agents)
     if args.common_reward:
-        scheme["reward"] = {"vshape": (1,)}
+        scheme["reward"] = {"vshape": (2,)}
     else:
         scheme["reward"] = {"vshape": (args.n_agents,)}
-    groups = {"agents": args.n_agents}
+    groups = {"agents": args.n_agents, "predators":  args.n_predators, "preys": args.n_preys}
     preprocess = {"actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])}
 
     buffer = ReplayBuffer(

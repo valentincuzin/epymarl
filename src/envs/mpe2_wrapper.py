@@ -43,15 +43,15 @@ class MPE2Wrapper(gym.Env):
         for agent, action in zip(self._env.agents, actions):
             dict_actions[agent] = action
         observations, rewards, dones, truncated, infos = self._env.step(dict_actions)
-
         obs = tuple([observations[k] for k in self._env.agents])
         rewards = [rewards[k] for k in self._env.agents]
         done = all([dones[k] for k in self._env.agents])
         truncated = all([truncated[k] for k in self._env.agents])
+        sum_info = 0
+        for value in infos.values():
+            sum_info += value["benchmark_data"]
         info = {
-            f"{k}_{key}": value
-            for k in self._env.agents
-            for key, value in infos[k].items()
+            "cumulative_collision": sum_info
         }
         if done:
             # empty obs and rewards for mpe environments on terminated episode

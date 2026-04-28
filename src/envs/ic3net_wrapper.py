@@ -1,5 +1,6 @@
 from pathlib import Path
 import importlib
+from types import SimpleNamespace as SN
 
 import gymnasium as gym
 from gymnasium.spaces import Tuple
@@ -15,7 +16,8 @@ class IC3NetWrapper(gym.Env):
 
     def __init__(self, lib_name, env_name, **kwargs):
         env = importlib.import_module(f"ic3net_envs.{env_name}")
-        self._env = env.parallel_env(**kwargs)
+        self._env = env.parallel_env()
+        self._env.multi_agent_init(SN(**kwargs))
         self._env.reset()
 
         self.n_agents = self._env.num_agents
@@ -68,11 +70,12 @@ class IC3NetWrapper(gym.Env):
 
 
 # import all files within the ic3net_envs library that match "**/*_v?.py" underneath library of ic3net_envs
-envs = Path(ic3net_envs.__path__[0]).glob("**/*_v?.py")
+envs = Path(ic3net_envs.__path__[0]).glob("**/*_v0.py")
 for e in envs:
     name = e.stem.replace("_", "-")
     lib = e.parent.stem
     filename = e.stem
+    print("lib and filename: ", lib, filename)
 
     gymkey = f"{lib}-{name}"
     gym.register(

@@ -6,12 +6,13 @@ common_reward: True  # Run experiment with common reward setup
 reward_scalarisation: "sum"  # How to aggregate rewards to single common reward (only used if common_reward is True)
 
 env_args: {
-  num_good: 3,
-  num_adversaries: 10,
+  num_good: 2,
+  num_adversaries: 6,
   num_obstacles: 0,
   max_cycles: 50,
   observation_range: 0.25,
   dynamic_rescaling: True,
+  benchmark_data: True,
   render_mode: 'rgb_array',
 } # Arguments for the environment
 
@@ -23,7 +24,7 @@ seed: 0
 use_tensorboard: False # Log results to tensorboard
 use_wandb: True # Log results to W&B
 wandb_team: valentincuzin-ucbl1 # W&B team name
-wandb_project: epymarl_fixed_env # W&B project name
+wandb_project: epymarl_test_env # W&B project name
 wandb_mode: "online" # W&B mode (online/offline)
 wandb_save_model: False # Save models to W&B (only done if use_wandb is True and save_model is True)
 save_model: True # Save the models to disk
@@ -39,8 +40,10 @@ local_results_path: "results" # Path for local results
 gamma: 0.99
 optim_alpha: 0.99 # RMSProp alpha
 optim_eps: 0.00005 # RMSProp epsilon
-grad_norm_clip: 15.0 # Reduce magnitude of gradients above this L2 norm
+grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
 add_value_last_step: True
+standardise_returns: False
+standardise_rewards: True  # always True i thinks
 
 # --- Experiment running params ---
 hp_search: 0

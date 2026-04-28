@@ -12,25 +12,31 @@ class FrozenTag(gym.Wrapper):
     """Tag with pretrained prey agent"""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.pt_action_space = self.action_space[-1]
-        self.pt_observation_space = self.observation_space[-1]
-        self.action_space = Tuple(self.action_space[:-1])
-        self.observation_space = Tuple(self.observation_space[:-1])
-        self.n_agents = 3
-        self.unwrapped.n_agents = 3
+        super().__init__(*args, **{})
+        self.num_good = kwargs["num_good"]
+        self.num_adversaries = kwargs["num_adversaries"]
+        self.pt_action_space = self.action_space[-self.num_good:]
+        self.pt_observation_space = self.observation_space[-self.num_good:]
+        self.action_space = Tuple(self.action_space[:-self.num_good])
+        self.observation_space = Tuple(self.observation_space[:-self.num_good])
+        self.n_agents = self.num_adversaries
+        self.unwrapped.n_agents = self.num_adversaries
 
     def reset(self, seed=None, options=None):
-        obss, info = super().reset(seed=seed, options=options)
-        return obss[:-1], info
+        obs, info = super().reset(seed=seed, options=options)
+        return obs[:-self.num_good], info
 
     def step(self, action):
-        random_action = 0
-        action = tuple(action) + (random_action,)
+        if isinstance(self.pt_action_space, tuple):
+            stay_action = tuple([0 for pt_action_space in self.pt_action_space])
+        else:
+            stay_action = 0
+        action = tuple(action) + stay_action
         obs, rew, done, truncated, info = super().step(action)
-        obs = obs[:-1]
-        rew = rew[:-1]
+        obs = obs[:-self.num_good]
+        rew = rew[:-self.num_good]
         return obs, rew, done, truncated, info
+
 
 
 class RandomTag(gym.Wrapper):

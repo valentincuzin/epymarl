@@ -64,17 +64,16 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
         dict: updated params
     """
     hp["lr"] = trial.suggest_float("lr", 1e-6, 0.1, log=True)
-    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.01, 0.5)
+    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.0, 0.5)
 
-    hp["q_nstep"] = trial.suggest_int("q_nstep", 5, 20)
+    hp["q_nstep"] = trial.suggest_int("q_nstep", 1, 15)
     hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.0, 0.5)
 
-    hp["grad_norm_clip"] = trial.suggest_int("grad_norm_clip", 1, 20)
-    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [False, True])
+    hp["grad_norm_clip"] = trial.suggest_float("grad_norm_clip", 0.0, 1.0)
     hp["target_update_interval_or_tau"] = trial.suggest_float("target_update_interval_or_tau", 0.01, 1.0)
 
     hp["epochs"] = trial.suggest_int("epochs", 5, 20)
-    hp["batch_size"] = trial.suggest_int("batch_size", 16, 128, step=16)
+    hp["batch_size"] = trial.suggest_int("batch_size", 16, 96, step=16)
     hp["buffer_size"] = hp["batch_size"]
 
     return hp

@@ -125,6 +125,7 @@ class ParallelRunner:
             b_idx for b_idx, termed in enumerate(terminated) if not termed
         ]
         final_env_infos = []  # may store extra stats like battle won. this is filled in ORDER OF TERMINATION
+        latest_info = {}
 
         while True:
             # Pass the entire batch of experiences up till now to the agents
@@ -182,8 +183,10 @@ class ParallelRunner:
                         self.env_steps_this_run += 1
 
                     env_terminated = False
+                    if data["info"] != {}:
+                        latest_info = data["info"]
                     if data["terminated"]:
-                        final_env_infos.append(data["info"])
+                        final_env_infos.append(latest_info)
                     if data["terminated"] and not data["info"].get(
                         "episode_limit", False
                     ):

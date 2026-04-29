@@ -28,14 +28,14 @@ class MLP(nn.Module):
 
 class DDPG():
 
-    def __init__(self, actor_input_dim, actor_output_dim, hidden):
+    def __init__(self, actor_input_dim, actor_output_dim, critic_input_dim, hidden, lr):
         self.policy = MLP(actor_input_dim, actor_output_dim, hidden)
 
     def step(self, obs, explore=False):
-        obs = torch.Tensor(obs)
+        obs = torch.Tensor(obs).unsqueeze(0)
         action = self.policy(obs)
-        action = action.argmax(dim=1)
-        return action.cpu().numpy()
+        action = action.argmax().cpu().item()
+        return action
 
     def load_params(self, params):
         self.policy.load_state_dict(params['policy'])

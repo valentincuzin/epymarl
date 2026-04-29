@@ -5,8 +5,8 @@ mask_before_softmax: True
 
 runner: "parallel"
 
-buffer_size: 48
-batch_size: 48
+buffer_size: 10
+batch_size: 10
 
 # Communication setting
 comm_range: 0.5
@@ -42,5 +42,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.2
 
-name: "g-mappo_v2"
+name: "g-mappo-test-final-v2"
 agent: "gnn"

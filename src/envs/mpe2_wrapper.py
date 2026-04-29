@@ -28,11 +28,13 @@ class MPE2Wrapper(gym.Env):
         self.observation_space = Tuple(
             tuple([self._env.observation_space(k) for k in self._env.agents])
         )
+        self.ep_info_sum = {'ep_info_sum': 0}
 
     def reset(self, *args, **kwargs):
         obs, info = self._env.reset(*args, **kwargs)
         obs = tuple([obs[k] for k in self._env.agents])
         self.last_obs = obs
+        self.ep_info_sum = {'ep_info_sum': 0}
         return obs, info
 
     def render(self, mode="human"):
@@ -49,10 +51,8 @@ class MPE2Wrapper(gym.Env):
         truncated = all([truncated[k] for k in self._env.agents])
         sum_info = 0
         for value in infos.values():
-            sum_info += value["benchmark_data"]
-        info = {
-            "cumulative_collision": sum_info
-        }
+            sum_info += value["benchmark_data"]  # sum on n agents
+        self.ep_info_sum["ep_info_sum"] += sum_info
         if done:
             # empty obs and rewards for mpe environments on terminated episode
             assert len(obs) == 0
@@ -61,7 +61,7 @@ class MPE2Wrapper(gym.Env):
             rewards = [0] * len(obs)
         else:
             self.last_obs = obs
-        return obs, rewards, done, truncated, info
+        return obs, rewards, done, truncated, self.ep_info_sum
 
     def close(self):
         return self._env.close()

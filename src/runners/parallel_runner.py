@@ -241,7 +241,7 @@ class ParallelRunner:
         cur_stats["ep_length"] = sum(episode_lengths) + cur_stats.get("ep_length", 0)
 
         cur_returns.extend(episode_returns)
-
+        print(cur_stats)
         n_test_runs = (
             max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         )

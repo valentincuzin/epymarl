@@ -229,6 +229,7 @@ class Scenario(BaseScenario):
         world.agents = [Agent() for i in range(num_agents)]
         for i, agent in enumerate(world.agents):
             agent.adversary = True if i < num_adversaries else False
+            agent.capture_score = 0
             base_name = "adversary" if agent.adversary else "agent"
             base_index = i if i < num_adversaries else i - num_adversaries
             agent.name = f"{base_name}_{base_index}"
@@ -291,11 +292,14 @@ class Scenario(BaseScenario):
     def benchmark_data(self, agent, world):
         # returns data for benchmarking purposes
         if agent.adversary:
-            collisions = 0
-            for a in self.good_agents(world):
-                if self.is_collision(a, agent):
-                    collisions += 1
-            return collisions
+            # collisions = 0
+            # for a in self.good_agents(world):
+            #     if self.is_collision(a, agent):
+            #         collisions += 1
+            # return collisions
+            res = agent.capture_score
+            agent.capture_score = 0
+            return res
         else:
             return 0
 
@@ -367,12 +371,15 @@ class Scenario(BaseScenario):
             for ag in agents:
                 if self.is_collision(agent, ag):
                     count = 1
-                    rew += 10
+                    # rew += 10
                     for adv in adversaries:  # better reward when coordination attack
-                        if adv.name != agent.name and self.is_collision(adv, ag, eps=0.25):
+                        if adv.name != agent.name and self.is_collision(adv, ag, eps=0.1):
                             count += 1
                             if count <= int(len(adversaries)/len(agents)):
                                 rew += 10
+                    if count >= 2:
+                        self._reset_agent(ag, world)
+                        agent.capture_score += 1
         return rew
 
     def observation(self, agent, world):
@@ -396,7 +403,7 @@ class Scenario(BaseScenario):
         """
         # Landmarks ---
         non_boundary_landmarks = [e for e in world.landmarks if not e.boundary]
-        entity_pos = range_pos(agent, non_boundary_landmarks)
+        landmarks_pos = get_others_pos(agent, non_boundary_landmarks, self.observation_range)
 
         # Other agents ---
         others = [other for other in world.agents if other is not agent]
@@ -406,25 +413,30 @@ class Scenario(BaseScenario):
         local_obs = np.concatenate(
             [agent.state.p_pos]
             + [agent.state.p_vel]
-            + entity_pos
+            + landmarks_pos
             + others_info
         )
         return local_obs
 
 
-def range_pos(agent, others):
+def get_others_pos(agent, others, observation_range):
     """
-    Get other positions and velocities
+    Get other positions
     if there are in the observation range of the agent.
     """
-    positions = []
+    others_info = []
+    visible = True
     for other in others:
-        euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
-        if euclidean_dist <= agent.obs_range:
-            positions.append(other.state.p_pos - agent.state.p_pos)
+
+        if observation_range is not None:
+            euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
+            visible = euclidean_dist <= agent.obs_range
+
+        if visible or observation_range is None:
+            others_info.append(other.state.p_pos - agent.state.p_pos)  # relative pos
         else:
-            positions.append(np.zeros(2))
-    return positions
+            others_info.append(np.zeros(2))
+    return others_info
 
 def get_others_infos(agent, others, observation_range):
     """

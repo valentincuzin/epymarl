@@ -38,6 +38,9 @@ def update_hp(study: Study, hp: dict, tuned_path: str) -> dict:
     if hp["runner"] == "parallel":  # set the buffer size as the same than the batch size
         hp["buffer_size"] = hp["batch_size"]
 
+    # clean all useless parameter, user-defined
+    hp.pop("wandb_project")
+
     # os.makedirs(os.path.dirname(tuned_path) or ".", exist_ok=True)
 
     with open(tuned_path, "w", encoding="utf-8") as fichier:
@@ -71,7 +74,8 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
 
     hp["grad_norm_clip"] = trial.suggest_float("grad_norm_clip", 0.0, 1.0)
     hp["target_update_interval_or_tau"] = trial.suggest_float("target_update_interval_or_tau", 0.01, 1.0)
-
+    
+    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [False, True])
     hp["epochs"] = trial.suggest_int("epochs", 5, 20)
     hp["batch_size"] = trial.suggest_int("batch_size", 16, 96, step=16)
     hp["buffer_size"] = hp["batch_size"]
@@ -157,7 +161,7 @@ def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 1, 3)
+    hp["n_layers"] = trial.suggest_int("n_layers", 1, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
 
@@ -174,8 +178,10 @@ def hp_rnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp = hp_mlp_settings(trial, hp)
+    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
+    hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["mem_dim"] = trial.suggest_int("mem_dim", 64, 512, step=64)
+    hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     return hp
 
 def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
@@ -189,13 +195,12 @@ def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    # hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
-    hp["n_layers"] = 0
+    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["n_heads_gat"] = trial.suggest_int("n_heads_gat", 1, 3)
-    hp["dropout_gat"] = trial.suggest_categorical("dropout_gat", [0, 0.25, 0.5])
+    hp["dropout_gat"] = trial.suggest_categorical("dropout_gat", [0, 0.1, 0.2])
     hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
     hp["edge_attr"] = trial.suggest_categorical("edge_attr", [False, True])
     return hp
@@ -211,13 +216,12 @@ def hp_gnn_rnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    # hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
-    hp["n_layers"] = 0
+    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["n_heads_gat"] = trial.suggest_int("n_heads_gat", 1, 3)
-    hp["dropout_gat"] = trial.suggest_categorical("dropout_gat", [0, 0.25, 0.5])
+    hp["dropout_gat"] = trial.suggest_categorical("dropout_gat", [0, 0.1, 0.2])
     hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
     hp["edge_attr"] = trial.suggest_categorical("edge_attr", [False, True])
 
@@ -235,8 +239,7 @@ def hp_egcn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    # hp["n_layers"] = trial.suggest_int("n_layers", 0, 3)
-    hp["n_layers"] = 0
+    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)

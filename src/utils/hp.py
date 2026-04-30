@@ -38,9 +38,6 @@ def update_hp(study: Study, hp: dict, tuned_path: str) -> dict:
     if hp["runner"] == "parallel":  # set the buffer size as the same than the batch size
         hp["buffer_size"] = hp["batch_size"]
 
-    # clean all useless parameter, user-defined
-    hp.pop("wandb_project")
-
     # os.makedirs(os.path.dirname(tuned_path) or ".", exist_ok=True)
 
     with open(tuned_path, "w", encoding="utf-8") as fichier:

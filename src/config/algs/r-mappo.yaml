@@ -32,5 +32,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.1
 
-name: "r-mappo-test-final-v2"
+name: "r-mappo"
 agent: "rnn"

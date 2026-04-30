@@ -40,9 +40,6 @@ results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 def my_main(_run, _config, _log):
     # Setting the random seed throughout the modules
     config = config_copy(_config)
-    np.random.seed(config["seed"])
-    th.manual_seed(config["seed"])
-    config["env_args"]["seed"] = config["seed"]
 
     # run the framework
     run(_run, config, _log)

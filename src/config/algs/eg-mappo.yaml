@@ -41,5 +41,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.1
 
-name: "eg-mappo_v2"
+name: "eg-mappo"
 agent: "egcn"

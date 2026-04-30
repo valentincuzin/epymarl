@@ -51,7 +51,6 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_gnn_rnn_settings(trial, param)
         case "egcn":
             param = hp.hp_egcn_settings(trial, param)
-    param["seed"] = 42  # set to 42 to reproductibility and unbiased by seed during test
     param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
@@ -63,20 +62,20 @@ def _objective(trial, args_dict, _log):
         hp_logger.console_logger.exception(
             f"error handle, this setting is not good... {str(e)}"
         )
-        return -1.0
+        raise optuna.TrialPruned()
     # we return the 25% last time_step mean of the return mean curve
     start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
-    tmp_res = int(
-        np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]])
-    )
+    tmp_res = np.round(np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]]), 2)
     return tmp_res
 
 
 def _run_optim(args_dict, _log):
+    args_dict["seed"] = 42
+    args_dict = init_seed(args_dict)
     sampler = optuna.samplers.TPESampler(
         multivariate=True, warn_independent_sampling=False, seed=42
     )
-    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=1)
+    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=5)
     study = optuna.create_study(
         study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
@@ -91,8 +90,14 @@ def _run_optim(args_dict, _log):
     )
     return study
 
+def init_seed(config):
+    np.random.seed(config["seed"])
+    th.manual_seed(config["seed"])
+    config["env_args"]["seed"] = config["seed"]
+    return config
 
 def run(_run, _config, _log):
+    _config = init_seed(_config)
     # check args sanity
     _config = args_sanity_check(_config, _log)
 

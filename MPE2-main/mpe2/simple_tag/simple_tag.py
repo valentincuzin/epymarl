@@ -369,7 +369,7 @@ class Scenario(BaseScenario):
                 )
         if agent.collide:
             for ag in agents:
-                if self.is_collision(agent, ag):
+                if self.is_collision(agent, ag, eps=0.1):
                     count = 1
                     # rew += 10
                     for adv in adversaries:  # better reward when coordination attack

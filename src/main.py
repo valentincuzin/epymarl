@@ -68,7 +68,7 @@ def _get_config(params, arg_name, subfolder):
         return config_dict
 
 
-
+# TODO to move in hp and use in run after tuning
 def _hp_load(task: str, alg: str) -> dict:
     """
     load a hyper-parameters if it's was save, else raise FileNotFoundError

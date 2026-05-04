@@ -237,7 +237,7 @@ class Scenario(BaseScenario):
             agent.silent = True
             agent.size = 0.075 if agent.adversary else 0.05
             agent.obs_range = (
-                self.observation_range
+                self.observation_range if agent.adversary else agent.size+0.1
             )  # every agents have the same obs range
             agent.comm_range = self.visual_comm_range
             agent.accel = 3.0 if agent.adversary else 4.0

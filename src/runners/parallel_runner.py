@@ -34,8 +34,9 @@ class ParallelRunner:
             env_args[i]["seed"] += i  # Remember: env seed are from 0 to batch_size always
             env_args[i]["common_reward"] = self.args.common_reward
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
-        env_args[0]["prefix_video"]=self.args.unique_token,
-        env_args[0]["test_interval"]=self.args.test_interval/10,
+        if not hasattr(args, "trial"):
+            env_args[0]["prefix_video"]=self.args.unique_token
+            env_args[0]["test_interval"]=self.args.test_interval/10
         self.ps = [
             Process(
                 target=env_worker,

@@ -1,5 +1,3 @@
-from copy import deepcopy
-import datetime
 import os
 from os.path import dirname, abspath
 import pprint
@@ -49,11 +47,14 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_gnn_rnn_settings(trial, param)
         case "rnn_gnn":  # same as gnn_rnn
             param = hp.hp_gnn_rnn_settings(trial, param)
+        case "tgn":
+            param = hp.hp_tgn_settings(trial, param)
         case "egcn":
             param = hp.hp_egcn_settings(trial, param)
     param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
+    print("selected param: ", param , '\n---\n')
     hp_args = SN(**param)
     hp_logger = Logger(_log)
     try:
@@ -361,6 +362,7 @@ def run_sequential(args, logger):
                 args.trial.report(tmp_res, runner.t_env)
                 # Handle pruning based on the intermediate value.
                 if args.trial.should_prune() and runner.t_env >= int(args.t_max/2): # prune disable before 1/2 of t_max (1/4 of t_max*2)
+                    runner.close_env()
                     raise optuna.TrialPruned()
 
     runner.close_env()

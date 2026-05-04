@@ -10,8 +10,6 @@ from os.path import dirname, abspath
 import sys
 import yaml
 
-import numpy as np
-
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 from sacred import SETTINGS

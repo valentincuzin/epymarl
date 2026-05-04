@@ -66,7 +66,7 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     hp["lr"] = trial.suggest_float("lr", 1e-6, 0.1, log=True)
     hp["eps_clip"] = trial.suggest_float("eps_clip", 0.0, 0.5)
 
-    hp["q_nstep"] = trial.suggest_int("q_nstep", 1, 15)
+    hp["q_nstep"] = trial.suggest_int("q_nstep", 5, 20)
     hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.0, 0.5)
 
     hp["grad_norm_clip"] = trial.suggest_float("grad_norm_clip", 0.0, 1.0)
@@ -74,7 +74,7 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     
     hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [False, True])
     hp["epochs"] = trial.suggest_int("epochs", 5, 20)
-    hp["batch_size"] = trial.suggest_int("batch_size", 16, 96, step=16)
+    hp["batch_size"] = trial.suggest_int("batch_size", 32, 128, step=32)
     hp["buffer_size"] = hp["batch_size"]
 
     return hp
@@ -240,5 +240,21 @@ def hp_egcn_settings(trial: Trial, hp: dict) -> dict:
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
+    hp["skipfeats"] = trial.suggest_categorical("skipfeats", [False, True])
+    return hp
+
+def hp_tgn_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for gnn+rnn architecture without searching for MLP arch
+
+    Args:
+        trial (Trial): 
+        hp (dict): 
+
+    Returns:
+        dict: updated params
+    """
+    hp = hp_gnn_rnn_settings(trial, hp)
+    hp["aggr"] = trial.suggest_categorical("aggr", ["mean", "max", "sum"])
     hp["skipfeats"] = trial.suggest_categorical("skipfeats", [False, True])
     return hp

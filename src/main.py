@@ -38,7 +38,7 @@ results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 
 @ex.main
 def my_main(_run, _config, _log):
-    # Setting the random seed throughout the modules
+    # Setting the random seed throughout the modulesw
     config = config_copy(_config)
 
     # run the framework

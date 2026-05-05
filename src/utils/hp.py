@@ -34,7 +34,7 @@ def _hp_load(task: str, alg: str) -> dict:
                 assert False, "{}_best.yaml error: {}".format(alg, exc)
     except FileNotFoundError:
         raise FileNotFoundError(f"No hyperparameter file found at {tuned_path}")
-    print("--- HYPER-PARAM ---\n\n", config_dict, "\n")
+    print("--- HYPER-PARAM LOADED ---\n\n", config_dict, "\n")
     config_dict["hp_search"] = 0
     config_dict.pop("seed")  # doesn't overight the seed
     config_dict["env_args"].pop("seed")

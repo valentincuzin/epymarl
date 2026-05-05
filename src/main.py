@@ -1,9 +1,4 @@
-try:
-    # until python 3.10
-    from collections import Mapping
-except:
-    # from python 3.10
-    from collections.abc import Mapping
+from collections.abc import Mapping
 from copy import deepcopy
 import os
 from os.path import dirname, abspath
@@ -25,7 +20,7 @@ import torch as th
 
 from utils.logging import get_logger
 from run import run
-from hp import _hp_load
+from utils.hp import _hp_load
 
 logger = get_logger()
 

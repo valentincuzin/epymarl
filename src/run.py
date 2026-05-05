@@ -22,6 +22,7 @@ from utils.timehelper import time_left, time_str
 from functools import partial
 import copy
 import optuna
+import optunahub
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
 import utils.hp as hp
@@ -55,7 +56,6 @@ def _objective(trial, args_dict, _log):
     param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
-    print("selected param: ", param, "\n---\n")
     hp_args = SN(**param)
     hp_logger = Logger(_log)
     try:
@@ -76,9 +76,12 @@ def _objective(trial, args_dict, _log):
 def _run_optim(args_dict, _log):
     args_dict["seed"] = 42
     args_dict = init_seed(args_dict)
-    sampler = optuna.samplers.TPESampler(
-        multivariate=True, warn_independent_sampling=False, seed=42
-    )
+    module = optunahub.load_module(package="samplers/tpe_tutorial")
+    # optuna.logging.set_verbosity(optuna.logging.CRITICAL)
+    # sampler = optuna.samplers.TPESampler(
+    #     multivariate=True, warn_independent_sampling=False, seed=42
+    # )
+    sampler = module.CustomizableTPESampler(seed=42)
     pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=5)
     study = optuna.create_study(
         study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",

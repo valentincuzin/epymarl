@@ -1,3 +1,4 @@
+import os
 import yaml
 from optuna.trial import TrialState
 from optuna import Study, Trial, visualization
@@ -5,7 +6,42 @@ from plotly.io import write_image
 
 # This reference give some advices : https://arxiv.org/abs/2306.01324
 
-def update_hp(study: Study, hp: dict, tuned_path: str) -> dict:
+
+def _hp_load(task: str, alg: str) -> dict:
+    """
+    load a hyper-parameters if it's was save, else raise FileNotFoundError
+
+    Args:
+        task (str):
+        alg (str):
+
+    Returns:
+        dict:
+    """
+    try:
+        tuned_path = os.path.join(
+            os.path.dirname(__file__),
+            "config",
+            "tuned",
+            task,
+            f"{alg}_best.yaml",
+        )
+        with open(tuned_path, "r") as f:
+            try:
+                config_dict: dict = yaml.load(f, Loader=yaml.FullLoader)
+                config_dict["tuned_path"] = tuned_path
+            except yaml.YAMLError as exc:
+                assert False, "{}_best.yaml error: {}".format(alg, exc)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"No hyperparameter file found at {tuned_path}")
+    print("--- HYPER-PARAM ---\n\n", config_dict, "\n")
+    config_dict["hp_search"] = 0
+    config_dict.pop("seed")  # doesn't overight the seed
+    config_dict["env_args"].pop("seed")
+    return config_dict
+
+
+def update_hp(study: Study, hp: dict, task: str, alg: str) -> dict:
     """
     load and save best parameters found during the search
 
@@ -35,11 +71,18 @@ def update_hp(study: Study, hp: dict, tuned_path: str) -> dict:
         print("    {}: {}".format(key, value))
         hp[key] = value
 
-    if hp["runner"] == "parallel":  # set the buffer size as the same than the batch size
+    if (
+        hp["runner"] == "parallel"
+    ):  # set the buffer size as the same than the batch size
         hp["buffer_size"] = hp["batch_size"]
 
-    # os.makedirs(os.path.dirname(tuned_path) or ".", exist_ok=True)
-
+    tuned_path = os.path.join(
+        os.path.dirname(__file__),
+        "config",
+        "tuned",
+        task,
+        f"{alg}_best.yaml",
+    )
     with open(tuned_path, "w", encoding="utf-8") as fichier:
         yaml.dump(hp, fichier, indent=4)
 
@@ -49,7 +92,7 @@ def update_hp(study: Study, hp: dict, tuned_path: str) -> dict:
     write_image(fig_importance, f"{tuned_path}_hp_importances.png")
     write_image(fig_history, f"{tuned_path}_hp_history.png")
     write_image(fig_relation, f"{tuned_path}_hp_relation.png")
-    return hp
+    return _hp_load(task, alg)
 
 
 def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
@@ -57,8 +100,8 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     suggest params for classic mappo train process
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
@@ -70,22 +113,24 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.0, 0.5)
 
     hp["grad_norm_clip"] = trial.suggest_float("grad_norm_clip", 0.0, 1.0)
-    hp["target_update_interval_or_tau"] = trial.suggest_float("target_update_interval_or_tau", 0.01, 1.0)
-    
-    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [False, True])
+    hp["target_update_interval_or_tau"] = trial.suggest_float(
+        "target_update_interval_or_tau", 0.01, 1.0
+    )
+
     hp["epochs"] = trial.suggest_int("epochs", 5, 20)
     hp["batch_size"] = trial.suggest_int("batch_size", 32, 128, step=32)
     hp["buffer_size"] = hp["batch_size"]
 
     return hp
 
+
 def hp_qmix_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for classic qmix train process
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
@@ -93,10 +138,16 @@ def hp_qmix_settings(trial: Trial, hp: dict) -> dict:
     hp["lr"] = trial.suggest_float("lr", 1e-6, 0.1, log=True)
     hp["epsilon_start"] = trial.suggest_float("epsilon_start", 0.8, 1.0)
     hp["epsilon_finish"] = trial.suggest_float("epsilon_finish", 0.01, 0.1)
-    hp["epsilon_anneal_time"] = trial.suggest_categorical("epsilon_anneal_time", [10000, 50000, 100000])
+    hp["epsilon_anneal_time"] = trial.suggest_categorical(
+        "epsilon_anneal_time", [10000, 50000, 100000]
+    )
 
-    hp["standardise_returns"] = trial.suggest_categorical("standardise_returns", [False, True])
-    hp["target_update_interval_or_tau"] = trial.suggest_int("target_update_interval_or_tau", 50, 500, step=50)
+    hp["standardise_returns"] = trial.suggest_categorical(
+        "standardise_returns", [False, True]
+    )
+    hp["target_update_interval_or_tau"] = trial.suggest_int(
+        "target_update_interval_or_tau", 50, 500, step=50
+    )
 
     hp["batch_size"] = trial.suggest_int("batch_size", 16, 128, step=16)
     hp["buffer_size"] = trial.suggest_int("buffer_size", 5000, 20000, step=5000)
@@ -106,13 +157,14 @@ def hp_qmix_settings(trial: Trial, hp: dict) -> dict:
     hp["hypernet_embed"] = trial.suggest_int("hypernet_embed", 64, 512, step=64)
     return hp
 
+
 def hp_ltscg_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for classic ltscg train process
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
@@ -126,16 +178,19 @@ def hp_ltscg_settings(trial: Trial, hp: dict) -> dict:
     hp["mlp_emb_hid"] = trial.suggest_int("mlp_emb_hid", 64, 512, step=64)
     hp["mlp_out"] = trial.suggest_int("mlp_out", 32, 256, step=32)
 
-    hp["gtsmodel"]["rnn_units"] = trial.suggest_int("gtsmodel, rnn_units", 64, 512, step=64)
+    hp["gtsmodel"]["rnn_units"] = trial.suggest_int(
+        "gtsmodel, rnn_units", 64, 512, step=64
+    )
     return hp
+
 
 def hp_dicg_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for classic dicg-de-mappo train process
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
@@ -147,30 +202,31 @@ def hp_dicg_settings(trial: Trial, hp: dict) -> dict:
 
     return hp
 
+
 def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for mlp architecture
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
     """
     hp["n_layers"] = trial.suggest_int("n_layers", 1, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
-    hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
 
     return hp
+
 
 def hp_rnn_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for rnn architecture
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
@@ -178,78 +234,74 @@ def hp_rnn_settings(trial: Trial, hp: dict) -> dict:
     hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["mem_dim"] = trial.suggest_int("mem_dim", 64, 512, step=64)
-    hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     return hp
+
 
 def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for gnn architecture
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
     """
     hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
-    hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
-    hp["n_heads_gat"] = trial.suggest_int("n_heads_gat", 1, 3)
-    hp["dropout_gat"] = trial.suggest_categorical("dropout_gat", [0, 0.1, 0.2])
     hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
     hp["edge_attr"] = trial.suggest_categorical("edge_attr", [False, True])
     return hp
+
 
 def hp_gnn_rnn_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for gnn+rnn architecture without searching for MLP arch
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
     """
     hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
-    hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
-    hp["n_heads_gat"] = trial.suggest_int("n_heads_gat", 1, 3)
-    hp["dropout_gat"] = trial.suggest_categorical("dropout_gat", [0, 0.1, 0.2])
     hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
     hp["edge_attr"] = trial.suggest_categorical("edge_attr", [False, True])
 
     hp["mem_dim"] = trial.suggest_int("mem_dim", 64, 512, step=64)
     return hp
 
+
 def hp_egcn_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for egcn architecture
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params
     """
     hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
-    hp["layer_norm"] = trial.suggest_categorical("layer_norm", [False, True])
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["skipfeats"] = trial.suggest_categorical("skipfeats", [False, True])
     return hp
+
 
 def hp_tgn_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for gnn+rnn architecture without searching for MLP arch
 
     Args:
-        trial (Trial): 
-        hp (dict): 
+        trial (Trial):
+        hp (dict):
 
     Returns:
         dict: updated params

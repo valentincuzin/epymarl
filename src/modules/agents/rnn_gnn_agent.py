@@ -7,6 +7,7 @@ from torch_geometric.nn import GATv2Conv, MessagePassing
 
 from utils.gnn_utils import batch_from_dense_to_ptg
 
+
 class RnnGnnAgentBase(nn.Module):
     def __init__(self, input_shape, args):
         super(RnnGnnAgentBase, self).__init__()
@@ -16,31 +17,23 @@ class RnnGnnAgentBase(nn.Module):
         for n in range(args.n_layers):
             self.fc_layers.append(nn.Linear(input_shape, args.h_dim))
             self.fc_layers.append(nn.ReLU())
-            if args.layer_norm:
-                self.fc_layers.append(nn.LayerNorm(args.h_dim))
             input_shape = args.h_dim
         self.base = nn.Sequential(*self.fc_layers)
 
         self.rnn = nn.GRUCell(input_shape, args.mem_dim)
 
         # comm modules:
-        self.gnns: MessagePassing = GATv2Conv(args.mem_dim, 
-                                              args.gnn_dim, 
-                                              edge_dim=3 if self.args.edge_attr else None,
-                                              residual=self.args.residual_gat,
-                                              dropout=self.args.dropout_gat,
-                                              heads=self.args.n_heads_gat,
-                                              concat=False)
+        self.gnns: MessagePassing = GATv2Conv(
+            args.mem_dim,
+            args.gnn_dim,
+            edge_dim=3 if self.args.edge_attr else None,
+            residual=self.args.residual_gat,
+        )
 
-    def init_hidden(self, batch_size, n_agents):
+    def init_hidden(self):
         # make hidden states on same device as model
         param = next(self.parameters())
-        self.hidden_states = (
-            param.new_zeros(1, self.args.mem_dim)
-            .unsqueeze(0)
-            .expand(batch_size, n_agents, -1)
-        )  # bav
-        return self.hidden_states
+        return param.new_zeros(1, self.args.mem_dim)
 
     def forward(self, inputs, hidden_states):
         x = self.base(inputs)
@@ -52,7 +45,11 @@ class RnnGnnAgentBase(nn.Module):
     def _communication_process(self, inputs, x):
         graphs = self._select_communication(inputs)
         graphs.x = x
-        h = self.gnns(graphs.x, graphs.edge_index, graphs.edge_attr if self.args.edge_attr else None)
+        h = self.gnns(
+            graphs.x,
+            graphs.edge_index,
+            graphs.edge_attr if self.args.edge_attr else None,
+        )
         return h
 
     def _select_communication(self, x):
@@ -65,20 +62,22 @@ class RnnGnnAgent(nn.Module):
         super(RnnGnnAgent, self).__init__()
         self.rnn_gnn_base = RnnGnnAgentBase(input_shape, args)
         self.act_prob = nn.Sequential(
-            nn.ReLU(),
-            nn.LayerNorm(args.gnn_dim) if args.layer_norm else nn.Identity(),
-            nn.Linear(args.gnn_dim, args.n_actions)
+            nn.ReLU(), nn.Linear(args.gnn_dim, args.n_actions)
         )
-        print(f"\n--- RnnGnnAgentBase {sum(p.numel() for p in self.parameters())} parameters --- \n\n", self, "\n\n")
+        print(
+            f"\n--- RnnGnnAgentBase {sum(p.numel() for p in self.parameters())} parameters --- \n\n",
+            self,
+            "\n\n",
+        )
 
     def forward(self, inputs, hidden_states):
         z, h = self.rnn_gnn_base.forward(inputs, hidden_states)
         q = self.act_prob(z)
         return q, h
-    
+
     def get_parent(self):
         return self.rnn_gnn_base
-    
+
     def init_hidden(self, batch_size, n_agents):
         # make hidden states on same device as model
         return self.rnn_gnn_base.init_hidden(batch_size, n_agents)

@@ -54,7 +54,7 @@ def _objective(trial, args_dict, _log):
     param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
-    print("selected param: ", param , '\n---\n')
+    print("selected param: ", param, "\n---\n")
     hp_args = SN(**param)
     hp_logger = Logger(_log)
     try:
@@ -66,7 +66,9 @@ def _objective(trial, args_dict, _log):
         raise optuna.TrialPruned()
     # we return the 25% last time_step mean of the return mean curve
     start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
-    tmp_res = np.round(np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]]), 2)
+    tmp_res = np.round(
+        np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]]), 2
+    )
     return tmp_res
 
 
@@ -91,11 +93,13 @@ def _run_optim(args_dict, _log):
     )
     return study
 
+
 def init_seed(config):
     np.random.seed(config["seed"])
     th.manual_seed(config["seed"])
     config["env_args"]["seed"] = config["seed"]
     return config
+
 
 def run(_run, _config, _log):
     _config = init_seed(_config)
@@ -115,21 +119,13 @@ def run(_run, _config, _log):
         map_name = _config["env_args"]["map_name"]
     except:
         map_name = _config["env_args"]["key"]
-    unique_token = (
-        f"{_config['name']}_seed{_config['seed']}_{map_name}"  # _{datetime.datetime.now()}
-    )
+    unique_token = f"{_config['name']}_seed{_config['seed']}_{map_name}"  # _{datetime.datetime.now()}
 
     args.unique_token = unique_token
     args_dict = vars(args)
     if args.hp_search != 0:
         study = _run_optim(args_dict=args_dict, _log=_log)
-        # study = optuna.load_study(
-        #     f"{args.hp_search} search for {args.unique_token}",
-        #     JournalStorage(JournalFileBackend(file_path="./journal.log")),
-        # )
-        args_dict = hp.update_hp(
-            study, args_dict, f"src/config/tuned/{map_name}/{args.name}_best.yaml"
-        )
+        args_dict = hp.update_hp(study, args_dict, map_name, args.name)
         args = SN(**args_dict)
 
     # setup loggers
@@ -361,7 +357,9 @@ def run_sequential(args, logger):
                 tmp_res = np.round(logger.stats["test_return_mean"][-1][1].item(), 2)
                 args.trial.report(tmp_res, runner.t_env)
                 # Handle pruning based on the intermediate value.
-                if args.trial.should_prune() and runner.t_env >= int(args.t_max/2): # prune disable before 1/2 of t_max (1/4 of t_max*2)
+                if args.trial.should_prune() and runner.t_env >= int(
+                    args.t_max / 2
+                ):  # prune disable before 1/2 of t_max (1/4 of t_max*2)
                     runner.close_env()
                     raise optuna.TrialPruned()
 

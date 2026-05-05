@@ -173,8 +173,8 @@ class ROLANDMAC(nn.Module):
         return agent_outs
 
     def init_hidden(self, batch_size):
-        self.hidden_states = self.agent.init_hidden(batch_size, self.n_agents)
-        self.prev_node_states = None
+        self.hidden_states = self.agent.init_hidden().unsqueeze(0).expand(batch_size, self.n_agents, -1)  # bav
+        self.prev_node_states = None        
 
     def parameters(self):
         return self.agent.parameters()

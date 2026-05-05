@@ -69,7 +69,6 @@ class EpisodeBatch:
             else:
                 shape = vshape
 
-            # TODO prove when it's append
             if episode_const:
                 print("DEBUG:  ##### it's append!! ###################")
                 self.data.episode_data[field_key] = th.zeros((batch_size, *shape), dtype=dtype, device=self.device)

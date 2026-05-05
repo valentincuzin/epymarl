@@ -5,13 +5,13 @@ import torch as th
 # PYG
 import torch_geometric as pyg
 from torch_geometric.nn.pool import radius_graph
-from torch_geometric.transforms import BaseTransform
 
 import networkx as nx
 import matplotlib.pyplot as plt
 
 import imageio
 import glob
+
 
 def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     if isinstance(x, list):
@@ -38,10 +38,14 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
         graphs.edge_index = th.empty((2, 0), device=x.device, dtype=th.long)
         graphs = graphs.to(x.device)
         return graphs
-    if args.comm_range == -1: # no comm range
-        adjacency = th.ones(args.n_agents, args.n_agents, device=x.device, dtype=th.long)
+    if args.comm_range == -1:  # no comm range
+        adjacency = th.ones(
+            args.n_agents, args.n_agents, device=x.device, dtype=th.long
+        )
         edge_index, _ = pyg.utils.dense_to_sparse(adjacency)
-        edge_index, _ = pyg.utils.remove_self_loops(edge_index)  # self-loops treat by add_self_loop option in methods to avoid double addition
+        edge_index, _ = pyg.utils.remove_self_loops(
+            edge_index
+        )  # self-loops treat by add_self_loop option in methods to avoid double addition
         n_edges = edge_index.shape[1]
         # Tensor of shape [batch_size * n_edges]
         # in which edges corresponding to the same graph have the same index.
@@ -54,18 +58,17 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     else:
         if pos is None:
             raise RuntimeError("from_pos topology needs positions as input")
-        graphs.edge_index = radius_graph(graphs.pos, batch=graphs.batch, r=args.comm_range, loop=False)
+        graphs.edge_index = radius_graph(
+            graphs.pos, batch=graphs.batch, r=args.comm_range, loop=False
+        )
     graphs = graphs.to(x.device)
     # old todo: prove the improvment of this component => better
     # Add relative coordonate and distance in edge_attr in all the graph
     if pos is not None:
         graphs = pyg.transforms.Cartesian(norm=False)(graphs)  # test to remove
         graphs = pyg.transforms.Distance(norm=False)(graphs)
-    # old todo: prove the improvment of this component => worst
-    # Create relative velocity
-    # if vel is not None:
-    #     graphs = _RelVel()(graphs)
     return graphs
+
 
 def print_graph(graphs: pyg.data.Batch, batch_size: int, t: int, args):
     # retrive only the first graphs batch and create a Data object
@@ -81,40 +84,21 @@ def print_graph(graphs: pyg.data.Batch, batch_size: int, t: int, args):
     plt.savefig(f"results/graphs/{args.unique_token}-{t}.png")
     plt.clf()
     plt.close()
-    
+
+
 def create_gif(unique_token):
 
     images = sorted(glob.glob(f"results/graphs/{unique_token}-*.png"))
     frames = [imageio.imread(p) for p in images]
-    imageio.mimsave(f'results/graphs/{unique_token}.gif', frames, duration=0.0004)
-
+    imageio.mimsave(f"results/graphs/{unique_token}.gif", frames, duration=0.0004)
 
 
 def _get_pos_from_x(x: th.Tensor, task_name: str):
     pos = None
     vel = None  # if there is no specific velocity, it's not a problem
-    if 'mpe2' in task_name:
+    if "mpe2" in task_name:
         pos = x[:, :2]
         vel = x[:, 2:4]
     elif task_name.startswith("rware:"):
         pos = x[:, :2]
     return pos, vel
-
-class _RelVel(BaseTransform):
-    """Transform that reads graph.vel and writes node1.vel - node2.vel in the edge attributes"""
-
-    def __init__(self):
-        pass
-
-    def forward(self, data):
-        (row, col), vel, pseudo = data.edge_index, data.vel, data.edge_attr
-
-        cart = vel[row] - vel[col]
-        cart = cart.view(-1, 1) if cart.dim() == 1 else cart
-
-        if pseudo is not None:
-            pseudo = pseudo.view(-1, 1) if pseudo.dim() == 1 else pseudo
-            data.edge_attr = th.cat([pseudo, cart.type_as(pseudo)], dim=-1)
-        else:
-            data.edge_attr = cart
-        return data

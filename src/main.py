@@ -11,8 +11,10 @@ import sys
 import yaml
 
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning)
 from sacred import SETTINGS
+
 SETTINGS["CAPTURE_MODE"] = (
     "no"  # set to "no" if you want to see stdout/stderr in console
 )
@@ -23,6 +25,7 @@ import torch as th
 
 from utils.logging import get_logger
 from run import run
+from hp import _hp_load
 
 logger = get_logger()
 
@@ -66,41 +69,6 @@ def _get_config(params, arg_name, subfolder):
             except yaml.YAMLError as exc:
                 assert False, "{}.yaml error: {}".format(config_name, exc)
         return config_dict
-
-
-# TODO to move in hp and use in run after tuning
-def _hp_load(task: str, alg: str) -> dict:
-    """
-    load a hyper-parameters if it's was save, else raise FileNotFoundError
-
-    Args:
-        task (str):
-        alg (str):
-
-    Returns:
-        dict:
-    """
-    try:
-        tuned_path = os.path.join(
-                os.path.dirname(__file__),
-                "config",
-                "tuned",
-                task,
-                f"{alg}_best.yaml",
-            )
-        with open(tuned_path,"r") as f:
-            try:
-                config_dict: dict = yaml.load(f, Loader=yaml.FullLoader)
-                config_dict["tuned_path"] = tuned_path
-            except yaml.YAMLError as exc:
-                assert False, "{}_best.yaml error: {}".format(alg, exc)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"No hyperparameter file found at {tuned_path}")
-    print("--- HYPER-PARAM ---\n\n", config_dict, '\n')
-    config_dict["hp_search"] = 0
-    config_dict.pop("seed")  # doesn't overight the seed
-    config_dict["env_args"].pop("seed")
-    return config_dict
 
 
 def recursive_dict_update(d, u):
@@ -170,10 +138,11 @@ if __name__ == "__main__":
             print(f"WARNING: no tuned config found: {str(e)}...")
 
     if hasattr(config_dict, "comm_range") and config_dict["comm_range"] > 0.0:
-        config_dict["env_args"]["visual_comm_range"] = config_dict["comm_range"]  # add visu
+        config_dict["env_args"]["visual_comm_range"] = config_dict[
+            "comm_range"
+        ]  # add visu
     # now add all the config to sacred
     ex.add_config(config_dict)
-
 
     # Save to disk by default for sacred
     logger.info("Saving to FileStorageObserver in results/sacred.")

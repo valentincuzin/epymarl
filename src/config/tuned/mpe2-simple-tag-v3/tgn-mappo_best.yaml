@@ -69,7 +69,7 @@ save_model_interval: 1000000
 save_replay: false
 seed: 42
 skipfeats: true
-standardise_returns: true
+standardise_returns: False
 standardise_rewards: true
 t_max: 2050000
 target_update_interval_or_tau: 0.9675758022831202

@@ -21,8 +21,6 @@ class EGCNAgent(nn.Module):
         for n in range(args.n_layers):
             self.fc_layers.append(nn.Linear(input_shape, args.h_dim))
             self.fc_layers.append(nn.ReLU())
-            if args.layer_norm:
-                self.fc_layers.append(nn.LayerNorm(args.h_dim))
             input_shape = args.h_dim
         self.base = nn.Sequential(*self.fc_layers)
         # comm modules:
@@ -34,13 +32,8 @@ class EGCNAgent(nn.Module):
             egcn_args[f"layer_{n}_feats"] = args.gnn_dim
         self.egcns = EGCN(egcn_args, activation=nn.ReLU(), skipfeats=args.skipfeats)
 
-        self.act_prob = nn.Sequential(
-            nn.LayerNorm(args.gnn_dim + (input_shape if args.skipfeats else 0))
-            if args.layer_norm
-            else nn.Identity(),
-            nn.Linear(
-                args.gnn_dim + (input_shape if args.skipfeats else 0), args.n_actions
-            ),
+        self.act_prob = nn.Linear(
+            args.gnn_dim + (input_shape if args.skipfeats else 0), args.n_actions
         )
         print(
             f"\n--- EGCNAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n",
@@ -48,15 +41,11 @@ class EGCNAgent(nn.Module):
             "\n\n",
         )
 
-    def init_hidden(self, batch_size, n_agents):
+    # not used in this agent architecture
+    def init_hidden(self):
         # make hidden states on same device as model
         param = next(self.parameters())
-        self.hidden_states = (
-            param.new_zeros(1, self.args.gnn_dim)
-            .unsqueeze(0)
-            .expand(batch_size, n_agents, -1)
-        )  # bav
-        return self.hidden_states
+        return param.new_zeros(1, self.args.h_dim)
 
     def forward(self, inputs, hidden_states):
         x = self.base(inputs)

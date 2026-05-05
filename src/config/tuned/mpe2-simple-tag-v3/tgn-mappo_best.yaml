@@ -1,0 +1,86 @@
+action_selector: soft_policies
+add_value_last_step: true
+agent: tgn
+agent_output_type: pi_logits
+aggr: max
+batch_size: 96
+buffer_cpu_only: false
+buffer_size: 96
+checkpoint_path: ''
+comm_range: 0.5
+common_reward: true
+critic_type: cv_critic
+device: cuda
+dropout_gat: 0.2
+edge_attr: false
+entropy_coef: 0.005220878929794788
+env: gymma
+env_args:
+    benchmark_data: true
+    dynamic_rescaling: true
+    key: mpe2-simple-tag-v3
+    max_cycles: 50
+    num_adversaries: 6
+    num_good: 2
+    num_obstacles: 0
+    observation_range: 0.25
+    pretrained_wrapper: FrozenTag
+    render_mode: rgb_array
+    seed: 42
+    time_limit: 100
+    visual_comm_range: 0.5
+epochs: 8
+eps_clip: 0.42653629803291093
+evaluate: false
+gamma: 0.99
+gnn_dim: 192
+grad_norm_clip: 0.45334641638786416
+h_dim: 128
+hp_search: 25
+hypergroup: null
+label: default_label
+layer_norm: true
+learner: ppo_learner
+learner_log_interval: 10000
+load_step: 0
+local_results_path: results
+log_interval: 50000
+lr: 0.0023978248494354055
+mac: basic_mac
+mask_before_softmax: true
+mem_dim: 256
+n_heads_gat: 1
+n_layers: 1
+name: tgn-mappo
+obs_agent_id: true
+obs_individual_obs: false
+obs_last_action: false
+optim_alpha: 0.99
+optim_eps: 5.0e-05
+q_nstep: 12
+render: false
+repeat_id: 1
+residual_gat: true
+reward_scalarisation: sum
+runner: parallel
+runner_log_interval: 10000
+save_model: true
+save_model_interval: 1000000
+save_replay: false
+seed: 42
+skipfeats: true
+standardise_returns: true
+standardise_rewards: true
+t_max: 2050000
+target_update_interval_or_tau: 0.9675758022831202
+test_greedy: true
+test_interval: 50000
+test_nepisode: 64
+unique_token: tgn-mappo_seed0_mpe2-simple-tag-v3
+use_cuda: true
+use_tensorboard: false
+use_wandb: true
+wandb_mode: online
+wandb_project: epymarl_test_env
+wandb_save_model: false
+wandb_team: valentincuzin-ucbl1

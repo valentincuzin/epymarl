@@ -19,10 +19,12 @@ env_args:
 target_update_interval_or_tau: 0.01
 
 lr: 0.0003
+grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
+
 h_dim: 128
 gnn_dim: 256
 skipfeats: False
-layer_norm: True
+
 n_layers: 0
 n_g_layers: 1
 
@@ -34,8 +36,7 @@ obs_individual_obs: False  # always verify the state content (often concat of in
 agent_output_type: "pi_logits"
 learner: "ppo_learner"
 entropy_coef: 0.01
-standardise_returns: False
-standardise_rewards: True  # always True i thinks
+
 q_nstep: 6 # 1 corresponds to normal r + gammaV
 critic_type: "cv_critic"
 epochs: 10

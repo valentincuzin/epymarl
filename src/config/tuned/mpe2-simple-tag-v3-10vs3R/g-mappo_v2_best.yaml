@@ -37,7 +37,7 @@ h_dim: 384
 hp_search: 25
 hypergroup: null
 label: default_label
-layer_norm: false
+
 learner: ppo_learner
 learner_log_interval: 10000
 load_step: 0

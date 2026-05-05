@@ -35,7 +35,7 @@ hypergroup: null
 hypernet_embed: 192
 hypernet_layers: 2
 label: default_label
-layer_norm: false
+
 learner: q_learner
 learner_log_interval: 10000
 load_step: 0

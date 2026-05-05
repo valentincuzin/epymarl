@@ -2,14 +2,14 @@ action_selector: soft_policies
 add_value_last_step: true
 agent: mlp
 agent_output_type: pi_logits
-batch_size: 96
+batch_size: 32
 buffer_cpu_only: false
-buffer_size: 96
+buffer_size: 32
 checkpoint_path: ''
 common_reward: true
 critic_type: cv_critic
 device: cuda
-entropy_coef: 0.1233748535834005
+entropy_coef: 0.10987706137473516
 env: gymma
 env_args:
     benchmark_data: true
@@ -19,31 +19,31 @@ env_args:
     num_adversaries: 6
     num_good: 2
     num_obstacles: 0
-    observation_range: 0.25
+    observation_range: null
     pretrained_wrapper: FrozenTag
     render_mode: rgb_array
     seed: 42
     time_limit: 100
-epochs: 7
-eps_clip: 0.16078674319578362
+epochs: 8
+eps_clip: 0.36661257199641406
 evaluate: false
 gamma: 0.99
-grad_norm_clip: 0.41370852989637835
-h_dim: 384
+grad_norm_clip: 0.05292253954358574
+h_dim: 320
 hp_search: 25
 hypergroup: null
 label: default_label
-layer_norm: true
+
 learner: ppo_learner
 learner_log_interval: 10000
 load_step: 0
 local_results_path: results
 log_interval: 50000
-lr: 0.0029596248314505335
+lr: 0.000282231422895157
 mac: basic_mac
 mask_before_softmax: true
-n_layers: 2
-name: mappo
+n_layers: 1
+name: mappo-FO
 obs_agent_id: true
 obs_individual_obs: false
 obs_last_action: false
@@ -62,11 +62,11 @@ seed: 42
 standardise_returns: false
 standardise_rewards: true
 t_max: 2050000
-target_update_interval_or_tau: 0.6990219322298259
+target_update_interval_or_tau: 0.7896706741570338
 test_greedy: true
 test_interval: 50000
 test_nepisode: 96
-unique_token: mappo_seed0_mpe2-simple-tag-v3
+unique_token: mappo-FO_seed0_mpe2-simple-tag-v3
 use_cuda: true
 use_tensorboard: false
 use_wandb: true

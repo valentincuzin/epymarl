@@ -3,6 +3,7 @@ from os.path import dirname, abspath
 import pprint
 import shutil
 import time
+import datetime
 import threading
 from types import SimpleNamespace as SN
 
@@ -119,7 +120,7 @@ def run(_run, _config, _log):
         map_name = _config["env_args"]["map_name"]
     except:
         map_name = _config["env_args"]["key"]
-    unique_token = f"{_config['name']}_seed{_config['seed']}_{map_name}"  # _{datetime.datetime.now()}
+    unique_token = f"{_config['name']}_seed{_config['seed']}_{map_name}_{datetime.datetime.now()}"  # _{datetime.datetime.now()}
 
     args.unique_token = unique_token
     args_dict = vars(args)

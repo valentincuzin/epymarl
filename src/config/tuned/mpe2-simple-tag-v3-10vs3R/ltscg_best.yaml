@@ -57,7 +57,7 @@ hypergroup: null
 hypernet_embed: 320
 hypernet_layers: 2
 label: default_label
-layer_norm: true
+
 learner: LTSCG_learner
 learner_log_interval: 10000
 load_step: 0

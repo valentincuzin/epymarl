@@ -22,10 +22,12 @@ edge_attr: True
 target_update_interval_or_tau: 0.4035008347505672
 
 lr: 4.771007201499188e-05
+grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
+
 h_dim: 192
 gnn_dim: 256
 mem_dim: 256
-layer_norm: True
+
 n_layers: 2
 aggr: "mean"  # among ["mean", "sum", "max"]
 skipfeats: True
@@ -38,8 +40,7 @@ obs_individual_obs: False  # always verify the state content (often concat of in
 agent_output_type: "pi_logits"
 learner: "ppo_learner"
 entropy_coef: 0.0015289582276904329
-standardise_returns: False
-standardise_rewards: True  # always True i thinks
+
 q_nstep: 12 # 1 corresponds to normal r + gammaV
 critic_type: "cv_critic"
 epochs: 12

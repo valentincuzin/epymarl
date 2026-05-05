@@ -16,8 +16,10 @@ buffer_size: 5000
 target_update_interval_or_tau: 200
 
 lr: 0.0003
+grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
+
 h_dim: 128
-layer_norm: True
+
 n_layers: 2
 
 obs_agent_id: True
@@ -31,8 +33,7 @@ residual: True
 
 
 # use the Q_Learner to train / QMIX as baseline
-standardise_returns: False
-standardise_rewards: True
+
 
 agent_output_type: "q"
 learner: "q_learner"

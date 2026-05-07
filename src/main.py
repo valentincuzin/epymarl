@@ -4,6 +4,7 @@ import os
 from os.path import dirname, abspath
 import sys
 import yaml
+import datetime
 
 import warnings
 
@@ -125,9 +126,20 @@ if __name__ == "__main__":
         elif param.startswith("env_args.key"):
             map_name = param.split("=")[1]
 
+    config_dict["unique_token"] = (
+        f"{config_dict['name']}_seed{config_dict['seed']}_{map_name}_{datetime.datetime.now()}"
+    )
+    tuned_path = os.path.join(
+        os.path.dirname(__file__),
+        "config",
+        "tuned",
+        map_name,
+        f"{config_dict['name']}_best.yaml",
+    )
+    config_dict["tuned_path"] = tuned_path
     if config_dict["hp_search"] == 0:
         try:
-            hp_config = _hp_load(map_name, config_dict["name"])
+            hp_config = _hp_load(tuned_path)
             config_dict = recursive_dict_update(config_dict, hp_config)
         except FileNotFoundError as e:
             print(f"WARNING: no tuned config found: {str(e)}...")

@@ -13,8 +13,6 @@ comm_range: 0.5
 env_args:
   visual_comm_range: 0.5  # must be the same as comm_range parameter
 
-n_heads_gat: 1
-dropout_gat: 0
 residual_gat: False
 edge_attr: True
 

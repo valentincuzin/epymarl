@@ -78,6 +78,6 @@ class RnnGnnAgent(nn.Module):
     def get_parent(self):
         return self.rnn_gnn_base
 
-    def init_hidden(self, batch_size, n_agents):
+    def init_hidden(self):
         # make hidden states on same device as model
-        return self.rnn_gnn_base.init_hidden(batch_size, n_agents)
+        return self.rnn_gnn_base.init_hidden()

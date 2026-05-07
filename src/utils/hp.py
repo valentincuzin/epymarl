@@ -1,4 +1,5 @@
 import os
+from attr import has
 import yaml
 from optuna.trial import TrialState
 from optuna import Study, Trial, visualization
@@ -7,7 +8,7 @@ from plotly.io import write_image
 # This reference give some advices : https://arxiv.org/abs/2306.01324
 
 
-def _hp_load(task: str, alg: str) -> dict:
+def _hp_load(tuned_path: str) -> dict:
     """
     load a hyper-parameters if it's was save, else raise FileNotFoundError
 
@@ -19,29 +20,18 @@ def _hp_load(task: str, alg: str) -> dict:
         dict:
     """
     try:
-        tuned_path = os.path.join(
-            os.path.dirname(__file__),
-            "config",
-            "tuned",
-            task,
-            f"{alg}_best.yaml",
-        )
         with open(tuned_path, "r") as f:
             try:
                 config_dict: dict = yaml.load(f, Loader=yaml.FullLoader)
-                config_dict["tuned_path"] = tuned_path
             except yaml.YAMLError as exc:
-                assert False, "{}_best.yaml error: {}".format(alg, exc)
+                assert False, "{} error: {}".format(tuned_path, exc)
     except FileNotFoundError:
         raise FileNotFoundError(f"No hyperparameter file found at {tuned_path}")
     print("--- HYPER-PARAM LOADED ---\n\n", config_dict, "\n")
-    config_dict["hp_search"] = 0
-    config_dict.pop("seed")  # doesn't overight the seed
-    config_dict["env_args"].pop("seed")
     return config_dict
 
 
-def update_hp(study: Study, hp: dict, task: str, alg: str) -> dict:
+def update_hp(study: Study, tuned_path: str) -> dict:
     """
     load and save best parameters found during the search
 
@@ -67,24 +57,16 @@ def update_hp(study: Study, hp: dict, task: str, alg: str) -> dict:
     print("  Value: ", trial.value)
 
     print("  Params: ")
+    
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
-        hp[key] = value
+    
+    if "buffer_size" not in trial.params.keys():
+    # set the buffer size as the same than the batch size
+        trial.params["buffer_size"] = trial.params["batch_size"]
 
-    if (
-        hp["runner"] == "parallel"
-    ):  # set the buffer size as the same than the batch size
-        hp["buffer_size"] = hp["batch_size"]
-
-    tuned_path = os.path.join(
-        os.path.dirname(__file__),
-        "config",
-        "tuned",
-        task,
-        f"{alg}_best.yaml",
-    )
     with open(tuned_path, "w", encoding="utf-8") as fichier:
-        yaml.dump(hp, fichier, indent=4)
+        yaml.dump(trial.params, fichier, indent=4)
 
     fig_importance = visualization.plot_param_importances(study)
     fig_history = visualization.plot_optimization_history(study)
@@ -92,7 +74,7 @@ def update_hp(study: Study, hp: dict, task: str, alg: str) -> dict:
     write_image(fig_importance, f"{tuned_path}_hp_importances.png")
     write_image(fig_history, f"{tuned_path}_hp_history.png")
     write_image(fig_relation, f"{tuned_path}_hp_relation.png")
-    return _hp_load(task, alg)
+    return _hp_load(tuned_path)
 
 
 def hp_mappo_settings(trial: Trial, hp: dict) -> dict:

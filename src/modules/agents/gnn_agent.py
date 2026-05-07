@@ -84,11 +84,7 @@ class GNNAgentV2(nn.Module):
                         input_shape,
                         args.gnn_dim,
                         edge_dim=3 if self.args.edge_attr else None,
-                        residual=self.args.residual_gat,
-                        dropout=self.args.dropout_gat,
-                        heads=self.args.n_heads_gat,
-                        concat=False,
-                    ),
+                        residual=self.args.residual_gat),
                     "x, edge_index -> x",
                 ),
                 nn.ReLU(),
@@ -97,11 +93,7 @@ class GNNAgentV2(nn.Module):
                         args.gnn_dim,
                         args.gnn_dim,
                         edge_dim=3 if self.args.edge_attr else None,
-                        residual=self.args.residual_gat,
-                        dropout=self.args.dropout_gat,
-                        heads=self.args.n_heads_gat,
-                        concat=False,
-                    ),
+                        residual=self.args.residual_gat),
                     "x, edge_index -> x",
                 ),
                 nn.ReLU(),
@@ -116,11 +108,10 @@ class GNNAgentV2(nn.Module):
         )
 
     # not used in this agent architecture
-    def init_hidden(self, batch_size, n_agents):
+    def init_hidden(self):
         # make hidden states on same device as model
         param = next(self.parameters())
-        self.reset = True
-        return param.new_zeros(1, self.args.gnn_dim)
+        return param.new_zeros(1, self.args.h_dim)
 
     def forward(self, inputs, hidden_state=None):
         x = self.base(inputs)

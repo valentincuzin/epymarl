@@ -3,7 +3,6 @@ from os.path import dirname, abspath
 import pprint
 import shutil
 import time
-import datetime
 import threading
 from types import SimpleNamespace as SN
 
@@ -22,7 +21,6 @@ from utils.timehelper import time_left, time_str
 from functools import partial
 import copy
 import optuna
-import optunahub
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
 import utils.hp as hp
@@ -53,7 +51,7 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_tgn_settings(trial, param)
         case "egcn":
             param = hp.hp_egcn_settings(trial, param)
-    param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
+    param["t_max"] = int(param["t_max"] / 200)  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
     hp_args = SN(**param)
@@ -74,26 +72,24 @@ def _objective(trial, args_dict, _log):
 
 
 def _run_optim(args_dict, _log):
-    args_dict["seed"] = 42
-    args_dict = init_seed(args_dict)
-    module = optunahub.load_module(package="samplers/tpe_tutorial")
-    # optuna.logging.set_verbosity(optuna.logging.CRITICAL)
-    # sampler = optuna.samplers.TPESampler(
-    #     multivariate=True, warn_independent_sampling=False, seed=42
-    # )
-    sampler = module.CustomizableTPESampler(seed=42)
+    args_dict_loc = copy.deepcopy(args_dict)
+    args_dict_loc["seed"] = 42
+    args_dict_loc = init_seed(args_dict_loc)
+    sampler = optuna.samplers.TPESampler(
+        multivariate=True, warn_independent_sampling=False, seed=42
+    )
     pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=5)
     study = optuna.create_study(
-        study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
+        study_name=f"{args_dict_loc['hp_search']} search for {args_dict_loc['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
         load_if_exists=True,
         sampler=sampler,
         pruner=pruner,
         direction="maximize",
     )
-    obj = partial(_objective, args_dict=args_dict, _log=_log)
+    obj = partial(_objective, args_dict=args_dict_loc, _log=_log)
     study.optimize(
-        obj, n_trials=args_dict["hp_search"], n_jobs=1, show_progress_bar=True
+        obj, n_trials=args_dict_loc["hp_search"], n_jobs=1, show_progress_bar=True
     )
     return study
 
@@ -104,33 +100,23 @@ def init_seed(config):
     config["env_args"]["seed"] = config["seed"]
     return config
 
-
-def run(_run, _config, _log):
+def config_to_args(_config, _log):
     _config = init_seed(_config)
-    # check args sanity
     _config = args_sanity_check(_config, _log)
+    _config["device"] = "cuda" if _config["use_cuda"] else "cpu"
 
     args = SN(**_config)
-    args.device = "cuda" if args.use_cuda else "cpu"
     assert test_alg_config_supports_reward(args), (
         "The specified algorithm does not support the general reward setup. Please choose a different algorithm or set `common_reward=True`."
     )
+    return args
 
-    # configure tensorboard logger
-    # unique_token = "{}__{}".format(args.name, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-
-    try:
-        map_name = _config["env_args"]["map_name"]
-    except:
-        map_name = _config["env_args"]["key"]
-    unique_token = f"{_config['name']}_seed{_config['seed']}_{map_name}_{datetime.datetime.now()}"  # _{datetime.datetime.now()}
-
-    args.unique_token = unique_token
-    args_dict = vars(args)
+def run(_run, _config, _log):
+    args = config_to_args(_config, _log)
     if args.hp_search != 0:
-        study = _run_optim(args_dict=args_dict, _log=_log)
-        args_dict = hp.update_hp(study, args_dict, map_name, args.name)
-        args = SN(**args_dict)
+        study = _run_optim(args_dict=_config, _log=_log)
+        _config.update(hp.update_hp(study, _config["tuned_path"]))
+        args = config_to_args(_config, _log)
 
     # setup loggers
     logger = Logger(_log)
@@ -142,7 +128,7 @@ def run(_run, _config, _log):
         tb_logs_direc = os.path.join(
             dirname(dirname(abspath(__file__))), "results", "tb_logs"
         )
-        tb_exp_direc = os.path.join(tb_logs_direc, "{}").format(unique_token)
+        tb_exp_direc = os.path.join(tb_logs_direc, "{}").format(args.unique_token)
         logger.setup_tb(tb_exp_direc)
 
     if args.use_wandb:

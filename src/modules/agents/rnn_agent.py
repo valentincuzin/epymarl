@@ -1,7 +1,6 @@
 # code adapted from https://github.com/wendelinboehmer/dcg
 
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class RNNAgent(nn.Module):
@@ -13,31 +12,20 @@ class RNNAgent(nn.Module):
         for _ in range(args.n_layers):
             self.fc_layers.append(nn.Linear(input_shape, args.h_dim))
             self.fc_layers.append(nn.ReLU())
-            if args.layer_norm:
-                self.fc_layers.append(nn.LayerNorm(args.h_dim))
             input_shape = args.h_dim
         self.base = nn.Sequential(*self.fc_layers)
 
         self.rnn = nn.GRUCell(input_shape, args.mem_dim)
 
-        self.act_prob = nn.Sequential(
-            nn.LayerNorm(args.mem_dim) if args.layer_norm else nn.Identity(),
-            nn.Linear(args.mem_dim, args.n_actions),
-        )
+        self.act_prob = nn.Linear(args.mem_dim, args.n_actions)
         print(
             f"\n\nDEBUG: total number of PARAMETERS for RNNAgent: {sum(p.numel() for p in self.parameters())} #####\n\n"
         )
 
-    def init_hidden(self, batch_size, n_agents):
+    def init_hidden(self):
         # make hidden states on same device as model
         param = next(self.parameters())
-        self.hidden_states = (
-            param.new_zeros(1, self.args.mem_dim)
-            .unsqueeze(0)
-            .expand(batch_size, n_agents, -1)
-        )  # bav
-        # TODO undo my change, and pass the init_hidden to basic_controller again
-        return self.hidden_states
+        return param.new_zeros(1, self.args.mem_dim)
 
     def forward(self, inputs, hidden_state):
         x = self.base(inputs)

@@ -11,6 +11,8 @@ batch_size: 16
 target_update_interval_or_tau: 0.01
 
 lr: 0.0005
+grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
+
 
 obs_agent_id: False
 obs_last_action: False

@@ -1,0 +1,17 @@
+aggr: max
+batch_size: 128
+buffer_size: 128
+edge_attr: false
+entropy_coef: 0.009176752428571189
+epochs: 16
+eps_clip: 0.27686313664988443
+gnn_dim: 512
+grad_norm_clip: 0.7152954386784317
+h_dim: 192
+lr: 0.00030733138952583036
+mem_dim: 192
+n_layers: 0
+q_nstep: 20
+residual_gat: true
+skipfeats: false
+target_update_interval_or_tau: 0.9222973625549683

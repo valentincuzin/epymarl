@@ -16,6 +16,7 @@ mac: "maddpg_mac"
 reg: 0.001
 batch_size: 32
 lr: 0.0005
+grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
 
 
 standardise_returns: False
@@ -24,7 +25,7 @@ standardise_rewards: True
 learner: "maddpg_learner"
 agent_output_type: "pi_logits"
 h_dim: 128
-layer_norm: True
+
 n_layers: 2
 critic_type: "maddpg_critic"
 name: "maddpg"

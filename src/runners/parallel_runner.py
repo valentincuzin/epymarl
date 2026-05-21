@@ -31,11 +31,12 @@ class ParallelRunner:
         env_fn = env_REGISTRY[self.args.env]
         env_args = [self.args.env_args.copy() for _ in range(self.batch_size)]
         for i in range(self.batch_size):
-            env_args[i]["seed"] += i  # Remember: env seed are from 0 to batch_size always
+            env_args[i]["seed"] += i  # Remember: env seed are from seed to seed+batch_size always
             env_args[i]["common_reward"] = self.args.common_reward
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
-        env_args[0]["prefix_video"]=self.args.unique_token,
-        env_args[0]["test_interval"]=self.args.test_interval/10,
+        if not hasattr(args, "trial"):
+            env_args[0]["prefix_video"]=self.args.unique_token
+            env_args[0]["test_interval"]=self.args.test_interval/10
         self.ps = [
             Process(
                 target=env_worker,
@@ -241,7 +242,6 @@ class ParallelRunner:
         cur_stats["ep_length"] = sum(episode_lengths) + cur_stats.get("ep_length", 0)
 
         cur_returns.extend(episode_returns)
-
         n_test_runs = (
             max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         )

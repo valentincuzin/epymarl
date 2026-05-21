@@ -1,5 +1,3 @@
-from copy import deepcopy
-import datetime
 import os
 from os.path import dirname, abspath
 import pprint
@@ -45,24 +43,15 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_rnn_settings(trial, param)
         case "gnn":
             param = hp.hp_gnn_settings(trial, param)
-        case "gnn_v2":
-            param = hp.hp_gnn_settings(trial, param)
         case "gnn_rnn":
             param = hp.hp_gnn_rnn_settings(trial, param)
         case "rnn_gnn":  # same as gnn_rnn
             param = hp.hp_gnn_rnn_settings(trial, param)
-        case "mlp_gnn_rnn":
-            param = hp.hp_mlp_settings(trial, param)
-            param = hp.hp_rnn_settings(trial, param)
-            param = hp.hp_gnn_settings(trial, param)
-        case "mlp_rnn_gnn":
-            param = hp.hp_mlp_settings(trial, param)
-            param = hp.hp_rnn_settings(trial, param)
-            param = hp.hp_gnn_settings(trial, param)
+        case "tgn":
+            param = hp.hp_tgn_settings(trial, param)
         case "egcn":
             param = hp.hp_egcn_settings(trial, param)
-    param["seed"] = 42  # set to 42 to reproductibility and unbiased by seed during test
-    param["t_max"] = int(param["t_max"] / 2)  # we only tune for fast learning
+    param["t_max"] = int(param["t_max"])  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
     hp_args = SN(**param)
@@ -73,68 +62,61 @@ def _objective(trial, args_dict, _log):
         hp_logger.console_logger.exception(
             f"error handle, this setting is not good... {str(e)}"
         )
-        return -1.0
+        raise optuna.TrialPruned()
     # we return the 25% last time_step mean of the return mean curve
-    start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
-    tmp_res = int(
-        np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]])
+    # start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
+    tmp_res = np.round(
+        np.max([x[1].item() for x in hp_logger.stats["test_return_mean"]]), 2
     )
     return tmp_res
 
 
 def _run_optim(args_dict, _log):
-    sampler = optuna.samplers.TPESampler(
-        multivariate=True, warn_independent_sampling=False, seed=42
-    )
-    pruner = optuna.pruners.MedianPruner(n_warmup_steps=5)
+    args_dict_loc = copy.deepcopy(args_dict)
+    args_dict_loc["seed"] = 42
+    args_dict_loc = init_seed(args_dict_loc)
+    sampler = optuna.samplers.TPESampler(seed=42)
+    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=5)
     study = optuna.create_study(
-        study_name=f"{args_dict['hp_search']} search for {args_dict['unique_token']}",
+        study_name=f"{args_dict_loc['hp_search']} search for {args_dict_loc['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
         load_if_exists=True,
         sampler=sampler,
         pruner=pruner,
         direction="maximize",
     )
-    obj = partial(_objective, args_dict=args_dict, _log=_log)
+    obj = partial(_objective, args_dict=args_dict_loc, _log=_log)
     study.optimize(
-        obj, n_trials=args_dict["hp_search"], n_jobs=1, show_progress_bar=True
+        obj, n_trials=args_dict_loc["hp_search"], n_jobs=1, show_progress_bar=True
     )
     return study
 
 
-def run(_run, _config, _log):
-    # check args sanity
+def init_seed(config):
+    np.random.seed(config["seed"])
+    th.manual_seed(config["seed"])
+    config["env_args"]["seed"] = config["seed"]
+    return config
+
+
+def config_to_args(_config, _log):
+    _config = init_seed(_config)
     _config = args_sanity_check(_config, _log)
+    _config["device"] = "cuda" if _config["use_cuda"] else "cpu"
 
     args = SN(**_config)
-    args.device = "cuda" if args.use_cuda else "cpu"
     assert test_alg_config_supports_reward(args), (
         "The specified algorithm does not support the general reward setup. Please choose a different algorithm or set `common_reward=True`."
     )
+    return args
 
-    # configure tensorboard logger
-    # unique_token = "{}__{}".format(args.name, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
-    try:
-        map_name = _config["env_args"]["map_name"]
-    except:
-        map_name = _config["env_args"]["key"]
-    unique_token = (
-        f"{_config['name']}_seed{_config['seed']}_{map_name}_{datetime.datetime.now()}"
-    )
-
-    args.unique_token = unique_token
-    args_dict = vars(args)
+def run(_run, _config, _log):
+    args = config_to_args(_config, _log)
     if args.hp_search != 0:
-        study = _run_optim(args_dict=args_dict, _log=_log)
-        # study = optuna.load_study(
-        #     f"{args.hp_search} search for {args.unique_token}",
-        #     JournalStorage(JournalFileBackend(file_path="./journal.log")),
-        # )
-        args_dict = hp.update_hp(
-            study, args_dict, f"src/config/tuned/{map_name}/{args.name}_best.yaml"
-        )
-        args = SN(**args_dict)
+        study = _run_optim(args_dict=_config, _log=_log)
+        _config.update(hp.update_hp(study, _config["tuned_path"]))
+        args = config_to_args(_config, _log)
 
     # setup loggers
     logger = Logger(_log)
@@ -146,7 +128,7 @@ def run(_run, _config, _log):
         tb_logs_direc = os.path.join(
             dirname(dirname(abspath(__file__))), "results", "tb_logs"
         )
-        tb_exp_direc = os.path.join(tb_logs_direc, "{}").format(unique_token)
+        tb_exp_direc = os.path.join(tb_logs_direc, "{}").format(args.unique_token)
         logger.setup_tb(tb_exp_direc)
 
     if args.use_wandb:
@@ -361,17 +343,15 @@ def run_sequential(args, logger):
             logger.log_stat("episode", episode, runner.t_env)
             logger.print_recent_stats()
             last_log_T = runner.t_env
-        if (
-            hasattr(args, "trial")
-            and (runner.t_env - last_test_T) / args.test_interval >= 1.0
-        ):
-            tmp_res = int(
-                np.mean([x[1].item() for x in logger.stats["test_return_mean"][-5:]])
-            )
-            args.trial.report(tmp_res, runner.t_env)
-            # Handle pruning based on the intermediate value.
-            if args.trial.should_prune():
-                raise optuna.TrialPruned()
+            if hasattr(args, "trial"):
+                tmp_res = np.round(logger.stats["test_return_mean"][-1][1].item(), 2)
+                args.trial.report(tmp_res, runner.t_env)
+                # Handle pruning based on the intermediate value.
+                if args.trial.should_prune() and runner.t_env >= int(
+                    args.t_max / 2
+                ):  # prune disable before 1/2 of t_max (1/4 of t_max*2)
+                    runner.close_env()
+                    raise optuna.TrialPruned()
 
     runner.close_env()
     logger.console_logger.info("Finished Training")

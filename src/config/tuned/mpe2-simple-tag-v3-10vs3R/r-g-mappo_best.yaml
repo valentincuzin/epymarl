@@ -1,18 +1,18 @@
-action_selector: epsilon_greedy
+action_selector: soft_policies
 add_value_last_step: true
-agent: mlp
-agent_output_type: q
-batch_size: 96
+agent: rnn_gnn
+agent_output_type: pi_logits
+batch_size: 112
 buffer_cpu_only: false
-buffer_size: 96
+buffer_size: 112
 checkpoint_path: ''
+comm_range: 0.5
 common_reward: true
-concate_gcn: true
-concate_mlp: true
-concate_mlp_dim: 10
+critic_type: cv_critic
 device: cuda
-dicg_emb_hid: 512
-double_q: true
+dropout_gat: 0.25
+edge_attr: true
+entropy_coef: 0.1969702343863142
 env: gymma
 env_args:
     dynamic_rescaling: true
@@ -26,59 +26,39 @@ env_args:
     render_mode: rgb_array
     seed: 0
     time_limit: 100
-epsilon_anneal_time: 50000
-epsilon_finish: 0.029109291149144498
-epsilon_start: 0.870993893804554
+    visual_comm_range: 0.5
+epochs: 5
+eps_clip: 0.173536300988791
 evaluate: false
-evaluation_epsilon: 0.0
 gamma: 0.99
-gcn_message_dim: 10
-grad_norm_clip: 15.0
-graph_emb_hid: 128
-graph_loss_weight: 1
-gtsmodel:
-    cl_decay_steps: 2000
-    dim_fc: 383552
-    filter_type: dual_random_walk
-    horizon: 12
-    input_dim: 2
-    l1_decay: 0
-    max_diffusion_step: 3
-    num_nodes: 207
-    num_rnn_layers: 1
-    output_dim: 1
-    rnn_units: 64
-    seq_len: 12
-    use_curriculum_learning: true
-gtsmodel, rnn_units: 192
-h_dim: 320
+gnn_dim: 192
+grad_norm_clip: 15
+h_dim: 384
 hp_search: 25
 hypergroup: null
-hypernet_embed: 320
-hypernet_layers: 2
 label: default_label
-layer_norm: true
-learner: LTSCG_learner
+
+learner: ppo_learner
 learner_log_interval: 10000
 load_step: 0
 local_results_path: results
 log_interval: 50000
-lr: 0.0048564451729482495
-mac: Ltscg_mac
-mixer: qmix
-mixing_embed_dim: 192
-mlp_emb_hid: 64
-mlp_out: 64
-n_layers: 2
-name: ltscg
-number_gcn_layers: 1
+lr: 0.0003036014087476986
+mac: basic_mac
+mask_before_softmax: true
+mem_dim: 320
+n_heads_gat: 3
+n_layers: 3
+name: r-g-mappo
 obs_agent_id: true
 obs_individual_obs: false
-obs_last_action: true
+obs_last_action: false
 optim_alpha: 0.99
 optim_eps: 5.0e-05
+q_nstep: 5
 render: false
 repeat_id: 1
+residual_gat: true
 reward_scalarisation: sum
 runner: parallel
 runner_log_interval: 10000
@@ -89,11 +69,11 @@ seed: 0
 standardise_returns: false
 standardise_rewards: true
 t_max: 2050000
-target_update_interval_or_tau: 500
+target_update_interval_or_tau: 0.8964915162891833
 test_greedy: true
 test_interval: 50000
 test_nepisode: 96
-unique_token: ltscg_seed0_mpe2-simple-tag-v3_2026-04-20 16:35:41.960067
+unique_token: r-g-mappo_seed0_mpe2-simple-tag-v3_2026-04-18 04:12:33.558812
 use_cuda: true
 use_tensorboard: false
 use_wandb: true

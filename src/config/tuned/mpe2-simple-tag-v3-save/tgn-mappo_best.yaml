@@ -1,0 +1,17 @@
+aggr: mean
+batch_size: 32
+buffer_size: 32
+edge_attr: false
+entropy_coef: 0.22612260410569823
+epochs: 14
+eps_clip: 0.17477630558651938
+gnn_dim: 384
+grad_norm_clip: 0.09815586870073763
+h_dim: 384
+lr: 3.3092559845735288e-06
+mem_dim: 64
+n_layers: 0
+q_nstep: 15
+residual_gat: true
+skipfeats: false
+target_update_interval_or_tau: 0.04452069560788574

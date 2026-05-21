@@ -1,0 +1,11 @@
+batch_size: 96
+buffer_size: 96
+entropy_coef: 0.22995809298762632
+epochs: 15
+eps_clip: 0.3208607856408347
+grad_norm_clip: 0.09537675400676385
+h_dim: 256
+lr: 2.212606824706159e-05
+n_layers: 2
+q_nstep: 8
+target_update_interval_or_tau: 0.8877371273914267

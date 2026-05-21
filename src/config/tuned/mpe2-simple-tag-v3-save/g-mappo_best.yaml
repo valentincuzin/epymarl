@@ -1,0 +1,14 @@
+batch_size: 96
+buffer_size: 96
+edge_attr: true
+entropy_coef: 0.1737284922610104
+epochs: 6
+eps_clip: 0.2263433859869261
+gnn_dim: 256
+grad_norm_clip: 0.025362047962769536
+h_dim: 384
+lr: 1.3724121277475915e-06
+n_layers: 1
+q_nstep: 13
+residual_gat: false
+target_update_interval_or_tau: 0.31665978961606733

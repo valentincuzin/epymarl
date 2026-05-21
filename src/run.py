@@ -51,7 +51,7 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_tgn_settings(trial, param)
         case "egcn":
             param = hp.hp_egcn_settings(trial, param)
-    param["t_max"] = int(param["t_max"] / 200)  # we only tune for fast learning
+    param["t_max"] = int(param["t_max"])  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
     hp_args = SN(**param)
@@ -64,9 +64,9 @@ def _objective(trial, args_dict, _log):
         )
         raise optuna.TrialPruned()
     # we return the 25% last time_step mean of the return mean curve
-    start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
+    # start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
     tmp_res = np.round(
-        np.mean([x[1].item() for x in hp_logger.stats["test_return_mean"][-start:]]), 2
+        np.max([x[1].item() for x in hp_logger.stats["test_return_mean"]]), 2
     )
     return tmp_res
 
@@ -75,9 +75,7 @@ def _run_optim(args_dict, _log):
     args_dict_loc = copy.deepcopy(args_dict)
     args_dict_loc["seed"] = 42
     args_dict_loc = init_seed(args_dict_loc)
-    sampler = optuna.samplers.TPESampler(
-        multivariate=True, warn_independent_sampling=False, seed=42
-    )
+    sampler = optuna.samplers.TPESampler(seed=42)
     pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=5)
     study = optuna.create_study(
         study_name=f"{args_dict_loc['hp_search']} search for {args_dict_loc['unique_token']}",
@@ -100,6 +98,7 @@ def init_seed(config):
     config["env_args"]["seed"] = config["seed"]
     return config
 
+
 def config_to_args(_config, _log):
     _config = init_seed(_config)
     _config = args_sanity_check(_config, _log)
@@ -110,6 +109,7 @@ def config_to_args(_config, _log):
         "The specified algorithm does not support the general reward setup. Please choose a different algorithm or set `common_reward=True`."
     )
     return args
+
 
 def run(_run, _config, _log):
     args = config_to_args(_config, _log)

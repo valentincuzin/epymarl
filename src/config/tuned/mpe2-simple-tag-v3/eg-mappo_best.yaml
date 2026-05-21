@@ -1,0 +1,13 @@
+batch_size: 32
+buffer_size: 32
+entropy_coef: 0.040409166502251764
+epochs: 7
+eps_clip: 0.11439993649125335
+gnn_dim: 192
+grad_norm_clip: 0.5139517121620631
+h_dim: 448
+lr: 0.0033259376165662496
+n_layers: 1
+q_nstep: 7
+skipfeats: true
+target_update_interval_or_tau: 0.4335422947688034

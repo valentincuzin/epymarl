@@ -1,79 +1,14 @@
-action_selector: soft_policies
-add_value_last_step: true
-agent: mlp
-agent_output_type: pi_logits
 batch_size: 128
-buffer_cpu_only: false
 buffer_size: 128
-checkpoint_path: ''
-common_reward: true
-critic_type: dicg_critic
-device: cuda
-dicg_emb_hid: 320
-entropy_coef: 0.2993292420985183
-env: gymma
-env_args:
-    benchmark_data: true
-    dynamic_rescaling: true
-    key: mpe2-simple-tag-v3
-    max_cycles: 50
-    num_adversaries: 6
-    num_good: 2
-    num_obstacles: 0
-    observation_range: 0.25
-    pretrained_wrapper: FrozenTag
-    render_mode: rgb_array
-    seed: 0
-    time_limit: 100
-epochs: 5
-eps_clip: 0.4753571532049581
-evaluate: false
-gamma: 0.99
-grad_norm_clip: 0.15601864044243652
-h_dim: 128
-hp_search: 11
-hypergroup: null
-label: default_label
-learner: ppo_learner
-learner_log_interval: 10000
-load_step: 0
-local_results_path: results
-log_interval: 50000
-lr: 7.459343285726558e-05
-mac: basic_mac
-mask_before_softmax: true
-n_g_layers: 2
+dicg_emb_hid: 512
+entropy_coef: 0.055211970417842766
+epochs: 16
+eps_clip: 0.19689068161484913
+grad_norm_clip: 0.5746562456602817
+h_dim: 256
+lr: 0.0006268232581572517
+n_g_layers: 1
 n_layers: 2
-name: dicg
-obs_agent_id: true
-obs_individual_obs: false
-obs_last_action: false
-optim_alpha: 0.99
-optim_eps: 5.0e-05
-q_nstep: 16
-render: false
-repeat_id: 1
-residual: true
-reward_scalarisation: sum
-runner: parallel
-runner_log_interval: 10000
-save_model: true
-save_model_interval: 1000000
-save_replay: false
-seed: 0
-standardise_returns: false
-standardise_rewards: true
-t_max: 2050000
-target_update_interval_or_tau: 0.16443457513284063
-test_greedy: true
-test_interval: 50000
-test_nepisode: 96
-tuned_path: /sps/liris/vcuzinrambau/epymarl/src/config/tuned/mpe2-simple-tag-v3/dicg_best.yaml
-unique_token: dicg_seed0_None_2026-05-07 19:15:47.687411
-use_cuda: true
-use_tensorboard: false
-use_wandb: true
-wandb_mode: online
-wandb_project: epymarl_6v2
-wandb_save_model: false
-wandb_team: valentincuzin-ucbl1
+q_nstep: 11
+residual: false
+target_update_interval_or_tau: 0.7516019903917894

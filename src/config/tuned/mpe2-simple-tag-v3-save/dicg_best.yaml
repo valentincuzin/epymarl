@@ -1,0 +1,14 @@
+batch_size: 96
+buffer_size: 96
+dicg_emb_hid: 384
+entropy_coef: 0.40541796248608236
+epochs: 16
+eps_clip: 0.47577883245571495
+grad_norm_clip: 0.03564226924794506
+h_dim: 128
+lr: 0.002179433275614708
+n_g_layers: 2
+n_layers: 2
+q_nstep: 14
+residual: true
+target_update_interval_or_tau: 0.12247809754999855

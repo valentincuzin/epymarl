@@ -77,7 +77,7 @@ def _run_optim(args_dict, _log):
     sampler = optuna.samplers.TPESampler(
         seed=42, multivariate=True, warn_independent_sampling=False
     )
-    pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=5)
+    pruner = optuna.pruners.PatientPruner(optuna.pruners.PercentilePruner(0.25), patience=5)
     study = optuna.create_study(
         study_name=f"{args_dict_loc['hp_search']} search for {args_dict_loc['unique_token']}",
         storage=JournalStorage(JournalFileBackend(file_path="./journal.log")),
@@ -350,7 +350,7 @@ def run_sequential(args, logger):
                 # Handle pruning based on the intermediate value.
                 if args.trial.should_prune() and runner.t_env >= int(
                     args.t_max / 4
-                ):  # prune disable before 1/3 of t_max
+                ):  # prune disable before 1/4 of t_max
                     runner.close_env()
                     raise optuna.TrialPruned()
 

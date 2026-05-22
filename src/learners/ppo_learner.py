@@ -65,7 +65,7 @@ class PPOLearner:
 
         old_mac_out = []
         self.old_mac.init_hidden(batch.batch_size)
-        for t in range(batch.max_seq_length - 1):
+        for t in range(batch.max_seq_length - 1):  # TODO I found it weard to forward 2 time (once during the batch, once again here) just to obtain agent out, why don't retain this information in batch to avoid 2 time forward
             agent_outs = self.old_mac.forward(batch, t=t)
             old_mac_out.append(agent_outs)
         old_mac_out = th.stack(old_mac_out, dim=1)  # Concat over time

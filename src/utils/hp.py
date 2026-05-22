@@ -100,7 +100,7 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     )
 
     hp["epochs"] = trial.suggest_int("epochs", 5, 20)
-    hp["batch_size"] = trial.suggest_int("batch_size", 16, 128, step=16)
+    hp["batch_size"] = trial.suggest_int("batch_size", 32, 128, step=32)
     hp["buffer_size"] = hp["batch_size"]
 
     return hp

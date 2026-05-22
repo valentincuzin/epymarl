@@ -63,8 +63,7 @@ def _objective(trial, args_dict, _log):
             f"error handle, this setting is not good... {str(e)}"
         )
         raise optuna.TrialPruned()
-    # we return the 25% last time_step mean of the return mean curve
-    # start = int(len(hp_logger.stats["test_return_mean"]) * 0.25)
+    
     tmp_res = np.round(
         np.max([x[1].item() for x in hp_logger.stats["test_return_mean"]]), 2
     )
@@ -75,7 +74,9 @@ def _run_optim(args_dict, _log):
     args_dict_loc = copy.deepcopy(args_dict)
     args_dict_loc["seed"] = 42
     args_dict_loc = init_seed(args_dict_loc)
-    sampler = optuna.samplers.TPESampler(seed=42)
+    sampler = optuna.samplers.TPESampler(
+        seed=42, multivariate=True, warn_independent_sampling=False
+    )
     pruner = optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=5)
     study = optuna.create_study(
         study_name=f"{args_dict_loc['hp_search']} search for {args_dict_loc['unique_token']}",
@@ -348,8 +349,8 @@ def run_sequential(args, logger):
                 args.trial.report(tmp_res, runner.t_env)
                 # Handle pruning based on the intermediate value.
                 if args.trial.should_prune() and runner.t_env >= int(
-                    args.t_max / 2
-                ):  # prune disable before 1/2 of t_max (1/4 of t_max*2)
+                    args.t_max / 4
+                ):  # prune disable before 1/3 of t_max
                     runner.close_env()
                     raise optuna.TrialPruned()
 

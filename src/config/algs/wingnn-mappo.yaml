@@ -5,8 +5,8 @@ mask_before_softmax: True
 
 runner: "parallel"
 
-buffer_size: 32
-batch_size: 32
+buffer_size: 128
+batch_size: 128
 
 window_num: 8
 drop_rate: 0.16

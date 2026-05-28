@@ -17,7 +17,6 @@ class PPOLearner:
         self.logger = logger
 
         self.mac = mac
-        # self.old_mac = copy.deepcopy(mac)
         self.agent_params = list(mac.parameters())
         self.agent_optimiser = Adam(params=self.agent_params, lr=args.lr)
 
@@ -62,11 +61,7 @@ class PPOLearner:
 
         critic_mask = mask.clone()
 
-        # self.old_mac.init_hidden(batch.batch_size)
-        # for t in range(batch.max_seq_length - 1):  # TODO I found it weard to forward 2 time (once during the batch, once again here) just to obtain agent out, why don't retain this information in batch to avoid 2 time forward
-        #     agent_outs = self.old_mac.forward(batch, t=t)
-        #     old_mac_out.append(agent_outs)
-        old_pi = batch["agent_outs"][:, :-1]
+        old_pi = batch["agent_outs"][:, :-1]  # already detatch
         old_pi[mask == 0] = 1.0
 
         old_pi_taken = th.gather(old_pi, dim=3, index=actions).squeeze(3)
@@ -114,8 +109,6 @@ class PPOLearner:
                 self.agent_params, self.args.grad_norm_clip
             )
             self.agent_optimiser.step()
-
-        # self.old_mac.load_state(self.mac)
 
         self.critic_training_steps += 1
         if (
@@ -244,7 +237,6 @@ class PPOLearner:
             target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
     def cuda(self):
-        # self.old_mac.cuda()
         self.mac.cuda()
         self.critic.cuda()
         self.target_critic.cuda()

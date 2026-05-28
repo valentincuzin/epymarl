@@ -197,7 +197,7 @@ def run_sequential(args, logger):
         "agent_outs": {
             "vshape": (env_info["n_actions"],),
             "group": "agents",
-            "dtype": th.float32,  # TODO try 16 if mem issue
+            "dtype": th.float32,
         },
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }

@@ -17,7 +17,6 @@ class PPOLearner:
         self.logger = logger
 
         self.mac = mac
-        self.old_mac = copy.deepcopy(mac)
         self.agent_params = list(mac.parameters())
         self.agent_optimiser = Adam(params=self.agent_params, lr=args.lr)
 
@@ -42,11 +41,10 @@ class PPOLearner:
         # Get the relevant quantities
 
         rewards = batch["reward"][:, :-1]
-        actions = batch["actions"][:, :]
+        actions = batch["actions"][:, :-1]
         terminated = batch["terminated"][:, :-1].float()
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
-        actions = actions[:, :-1]
 
         if self.args.standardise_rewards:
             self.rew_ms.update(rewards)
@@ -63,13 +61,7 @@ class PPOLearner:
 
         critic_mask = mask.clone()
 
-        old_mac_out = []
-        self.old_mac.init_hidden(batch.batch_size)
-        for t in range(batch.max_seq_length - 1):  # TODO I found it weard to forward 2 time (once during the batch, once again here) just to obtain agent out, why don't retain this information in batch to avoid 2 time forward
-            agent_outs = self.old_mac.forward(batch, t=t)
-            old_mac_out.append(agent_outs)
-        old_mac_out = th.stack(old_mac_out, dim=1)  # Concat over time
-        old_pi = old_mac_out
+        old_pi = batch["agent_outs"][:, :-1]  # already detatch
         old_pi[mask == 0] = 1.0
 
         old_pi_taken = th.gather(old_pi, dim=3, index=actions).squeeze(3)
@@ -95,7 +87,7 @@ class PPOLearner:
             pi_taken = th.gather(pi, dim=3, index=actions).squeeze(3)
             log_pi_taken = th.log(pi_taken + 1e-10)
 
-            ratios = th.exp(log_pi_taken - old_log_pi_taken.detach())
+            ratios = th.exp(log_pi_taken - old_log_pi_taken)
             surr1 = ratios * advantages
             surr2 = (
                 th.clamp(ratios, 1 - self.args.eps_clip, 1 + self.args.eps_clip)
@@ -117,8 +109,6 @@ class PPOLearner:
                 self.agent_params, self.args.grad_norm_clip
             )
             self.agent_optimiser.step()
-
-        self.old_mac.load_state(self.mac)
 
         self.critic_training_steps += 1
         if (
@@ -247,7 +237,6 @@ class PPOLearner:
             target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
     def cuda(self):
-        self.old_mac.cuda()
         self.mac.cuda()
         self.critic.cuda()
         self.target_critic.cuda()

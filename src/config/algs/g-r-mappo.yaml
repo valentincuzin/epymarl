@@ -42,5 +42,5 @@ critic_type: "cv_critic"
 epochs: 12
 eps_clip: 0.13078860822329919
 
-name: "g-r-mappo-t3"
+name: "g-r-mappo-t7"
 agent: "gnn_rnn"

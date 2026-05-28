@@ -194,6 +194,11 @@ def run_sequential(args, logger):
             "group": "agents",
             "dtype": th.int,
         },
+        "agent_outs": {
+            "vshape": (env_info["n_actions"],),
+            "group": "agents",
+            "dtype": th.float32,  # TODO try 16 if mem issue
+        },
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }
     # For individual rewards in gymmai reward is of shape (1, n_agents)

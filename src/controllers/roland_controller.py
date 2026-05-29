@@ -117,10 +117,13 @@ class ROLANDMAC(nn.Module):
         chosen_actions = self.action_selector.select_action(
             agent_outputs[bs], avail_actions[bs], t_env, test_mode=test_mode
         )
-        return chosen_actions
+        return chosen_actions, agent_outputs
 
     def train_step(self, agent_inputs, last_actions):
-        hidden_states = self.hidden_states.detach()
+        if self.hidden_states is not None:
+            hidden_states = self.hidden_states.detach()
+        else:
+            hidden_states = self.hidden_states        
         last_actions = last_actions.detach()
 
         z, emb = self.partial_agent(self.prev_node_states, last_actions, hidden_states)
@@ -153,8 +156,7 @@ class ROLANDMAC(nn.Module):
     def forward(self, ep_batch, t, test_mode=False):
         agent_inputs = self._build_inputs(ep_batch, t)
         avail_actions = ep_batch["avail_actions"][:, t]
-        t_loss = None
-        if not test_mode:
+        if test_mode:
             t_loss = self.fine_tune(ep_batch, t)
         agent_outs, self.hidden_states = self.agent(agent_inputs, self.hidden_states)
         
@@ -168,7 +170,7 @@ class ROLANDMAC(nn.Module):
                 agent_outs[reshaped_avail_actions == 0] = -1e10
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
         agent_outs = agent_outs.view(ep_batch.batch_size, self.n_agents, -1)
-        if not test_mode:
+        if test_mode:
             return agent_outs, t_loss
         return agent_outs
 

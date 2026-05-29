@@ -31,6 +31,7 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     graphs.x = x
     graphs.max_num_nodes = x.shape[0]
     graphs.pos = pos
+    graphs.pos = graphs.pos
     graphs.vel = vel
     graphs.edge_attr = None
 

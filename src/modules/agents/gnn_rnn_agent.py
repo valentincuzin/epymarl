@@ -8,10 +8,9 @@ from torch_geometric.nn import GATv2Conv, MessagePassing
 
 from utils.gnn_utils import batch_from_dense_to_ptg
 
-
-class GnnRnnAgent(nn.Module):
+class GnnRnnAgentBase(nn.Module):
     def __init__(self, input_shape, args):
-        super(GnnRnnAgent, self).__init__()
+        super(GnnRnnAgentBase, self).__init__()
         self.args = args
 
         self.fc_layers = []
@@ -31,23 +30,10 @@ class GnnRnnAgent(nn.Module):
         )
         self.rnn = nn.GRUCell(args.gnn_dim, args.mem_dim)
 
-        self.act_prob = nn.Linear(args.mem_dim, args.n_actions)
-        print(
-            f"\n--- GnnRnnAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n",
-            self,
-            "\n\n",
-        )
-
-    def init_hidden(self):
-        # make hidden states on same device as model
-        param = next(self.parameters())
-        return param.new_zeros(1, self.args.mem_dim)
-
     def forward(self, inputs, hidden_states):
         x = self.base(inputs)
         h = self._communication_process(inputs, x, hidden_states)
-        q = self.act_prob(h)
-        return q, h
+        return h, None
 
     def _communication_process(self, inputs, x, hidden_states):
         graphs = self._select_communication(inputs)
@@ -66,3 +52,30 @@ class GnnRnnAgent(nn.Module):
     def _select_communication(self, x):
         graphs = batch_from_dense_to_ptg(x, self.args.batch_size, self.args)
         return graphs
+
+
+class GnnRnnAgent(nn.Module):
+    def __init__(self, input_shape, args):
+        super(GnnRnnAgent, self).__init__()
+        self.args = args
+
+        self.gnn_rnn_base = GnnRnnAgentBase(input_shape, args)
+        self.act_prob = nn.Linear(args.mem_dim, args.n_actions)
+        print(
+            f"\n--- GnnRnnAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n",
+            self,
+            "\n\n",
+        )
+
+    def init_hidden(self):
+        # make hidden states on same device as model
+        param = next(self.parameters())
+        return param.new_zeros(1, self.args.mem_dim)
+
+    def forward(self, inputs, hidden_states):
+        h, _ = self.gnn_rnn_base(inputs, hidden_states)
+        q = self.act_prob(h)
+        return q, h
+
+    def get_parent(self):
+        return self.gnn_rnn_base

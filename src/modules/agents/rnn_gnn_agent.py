@@ -30,11 +30,6 @@ class RnnGnnAgentBase(nn.Module):
             residual=self.args.residual_gat,
         )
 
-    def init_hidden(self):
-        # make hidden states on same device as model
-        param = next(self.parameters())
-        return param.new_zeros(1, self.args.mem_dim)
-
     def forward(self, inputs, hidden_states):
         x = self.base(inputs)
         h_in = hidden_states.reshape(-1, self.args.mem_dim)
@@ -60,12 +55,13 @@ class RnnGnnAgentBase(nn.Module):
 class RnnGnnAgent(nn.Module):
     def __init__(self, input_shape, args):
         super(RnnGnnAgent, self).__init__()
+        self.args = args
         self.rnn_gnn_base = RnnGnnAgentBase(input_shape, args)
         self.act_prob = nn.Sequential(
             nn.ReLU(), nn.Linear(args.gnn_dim, args.n_actions)
         )
         print(
-            f"\n--- RnnGnnAgentBase {sum(p.numel() for p in self.parameters())} parameters --- \n\n",
+            f"\n--- RnnGnnAgent {sum(p.numel() for p in self.parameters())} parameters --- \n\n",
             self,
             "\n\n",
         )
@@ -75,9 +71,10 @@ class RnnGnnAgent(nn.Module):
         q = self.act_prob(z)
         return q, h
 
-    def get_parent(self):
-        return self.rnn_gnn_base
-
     def init_hidden(self):
         # make hidden states on same device as model
-        return self.rnn_gnn_base.init_hidden()
+        param = next(self.parameters())
+        return param.new_zeros(1, self.args.mem_dim)
+
+    def get_parent(self):
+        return self.rnn_gnn_base

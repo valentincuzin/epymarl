@@ -17,7 +17,6 @@ class ROLANDLearner:
         self.logger = logger
 
         self.mac = mac
-        self.old_mac = copy.deepcopy(mac)
         self.agent_params = list(mac.agent.parameters())
         self.agent_optimiser = Adam(params=self.agent_params, lr=args.lr)
 
@@ -40,7 +39,7 @@ class ROLANDLearner:
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         # Get the relevant quantities
-        th.autograd.set_detect_anomaly(True)
+
         rewards = batch["reward"][:, :-1]
         actions = batch["actions"][:, :]
         terminated = batch["terminated"][:, :-1].float()
@@ -63,30 +62,21 @@ class ROLANDLearner:
 
         critic_mask = mask.clone()
 
-        old_mac_out = []
-        pred_losses = 0
-        self.old_mac.init_hidden(batch.batch_size)
-        # for t in range(batch.max_seq_length - 1):
-        #     self.old_mac.fine_tune(batch, t=t)
-        for t in range(batch.max_seq_length - 1):
-            agent_outs, t_loss = self.old_mac.forward(batch, t=t)
-            pred_losses += t_loss
-            old_mac_out.append(agent_outs)
-        pred_losses /= batch.max_seq_length
-        with th.no_grad():
-            old_pi = th.stack(old_mac_out, dim=1)  # Concat over time
-            old_pi = old_pi.masked_fill(mask.unsqueeze(-1) == 0, 1.0)  # old_pi[mask == 0] = 1.0
+        old_pi = batch["agent_outs"][:, :-1]  # already detatch
+        old_pi[mask == 0] = 1.0
 
-            old_pi_taken = th.gather(old_pi, dim=3, index=actions).squeeze(3)
-            old_log_pi_taken = th.log(old_pi_taken + 1e-10)
+        old_pi_taken = th.gather(old_pi, dim=3, index=actions).squeeze(3)
+        old_log_pi_taken = th.log(old_pi_taken + 1e-10)
 
-        self.mac.load_state(self.old_mac, _copy=True)
         for k in range(self.args.epochs):
             mac_out = []
+            model_losses = th.tensor(0.0).to(self.args.device)
             self.mac.init_hidden(batch.batch_size)
             for t in range(batch.max_seq_length - 1):
-                agent_outs = self.mac.forward(batch, t=t, test_mode=True)
+                agent_outs, t_loss = self.mac.forward(batch, t=t, test_mode=True)
                 mac_out.append(agent_outs)
+                model_losses += t_loss
+            model_losses /= t
             pi = th.stack(mac_out, dim=1)  # Concat over time
 
             advantages, critic_train_stats = self.train_critic_sequential(
@@ -114,7 +104,7 @@ class ROLANDLearner:
                 ).sum()
                 / mask.sum()
             )
-            final_loss = (1-self.args.obj2)* pg_loss + self.args.obj2 * pred_losses
+            final_loss = (1-self.args.obj2)* pg_loss + self.args.obj2 * model_losses
             # Optimise agents
             th.cuda.empty_cache()
             self.agent_optimiser.zero_grad()
@@ -124,7 +114,6 @@ class ROLANDLearner:
             )
             self.agent_optimiser.step()
 
-        self.old_mac.load_state(self.mac, _copy=True)
 
         self.critic_training_steps += 1
         if (
@@ -157,7 +146,7 @@ class ROLANDLearner:
                 t_env,
             )
             self.logger.log_stat("pg_loss", pg_loss.item(), t_env)
-            self.logger.log_stat("pred_losses", pred_losses.item(), t_env)
+            self.logger.log_stat("pred_losses", model_losses.item(), t_env)
             self.logger.log_stat("final_loss", final_loss.item(), t_env)
             self.logger.log_stat("agent_grad_norm", grad_norm.item(), t_env)
             self.logger.log_stat(
@@ -255,7 +244,6 @@ class ROLANDLearner:
             target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
     def cuda(self):
-        self.old_mac.cuda()
         self.mac.cuda()
         self.critic.cuda()
         self.target_critic.cuda()

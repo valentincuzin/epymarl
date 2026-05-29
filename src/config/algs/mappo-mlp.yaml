@@ -5,18 +5,15 @@ mask_before_softmax: True
 
 runner: "parallel"
 
-buffer_size: 128
-batch_size: 128
-
-window_num: 8
-drop_rate: 0.16
-maml_lr: 0.008
-beta: 0.89
+buffer_size: 32
+batch_size: 32
 
 # update the target network every {} training steps
 target_update_interval_or_tau: 0.01
 
 lr: 0.0003
+grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
+
 h_dim: 128
 
 n_layers: 2
@@ -35,5 +32,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.1
 
-name: "mappo"
+name: "mappo-mlp"
 agent: "mlp"

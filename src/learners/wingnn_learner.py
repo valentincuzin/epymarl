@@ -73,8 +73,9 @@ class PPOLearner:
             for t in range(batch.max_seq_length - 1):
                 agent_outs = self.mac.forward(batch, t=t)
                 mac_out.append(agent_outs)
-            pi = th.stack(mac_out, dim=1)  # Concat over time
+            mac_out = th.stack(mac_out, dim=1)  # Concat over time
 
+            pi = mac_out
             advantages, critic_train_stats = self.train_critic_sequential(
                 self.critic, self.target_critic, batch, rewards, critic_mask
             )

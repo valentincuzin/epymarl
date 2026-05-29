@@ -105,7 +105,6 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
 
     return hp
 
-
 def hp_qmix_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for classic qmix train process
@@ -213,7 +212,6 @@ def hp_rnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["mem_dim"] = trial.suggest_int("mem_dim", 64, 512, step=64)
     return hp
@@ -230,13 +228,18 @@ def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
-    hp["edge_attr"] = trial.suggest_categorical("edge_attr", [False, True])
     return hp
 
+def hp_wingnn_settings(trial: Trial, hp: dict) -> dict:
+    hp = hp_mappo_settings(trial, hp)
+    
+    hp["maml_lr"] = trial.suggest_float("maml_lr", 1e-3, 0.5, log=True)
+    hp["drop_rate"] = trial.suggest_float("drop_rate", 0.0, 0.2, step=0.05)
+    hp["early_stop"] = trial.suggest_int("early_stop", 1, 10)
+    hp["win_size_max"] = trial.suggest_int("win_size_max", 5, 20)
 
 def hp_gnn_rnn_settings(trial: Trial, hp: dict) -> dict:
     """
@@ -249,11 +252,9 @@ def hp_gnn_rnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
-    hp["edge_attr"] = trial.suggest_categorical("edge_attr", [False, True])
 
     hp["mem_dim"] = trial.suggest_int("mem_dim", 64, 512, step=64)
     return hp
@@ -270,7 +271,6 @@ def hp_egcn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["skipfeats"] = trial.suggest_categorical("skipfeats", [False, True])

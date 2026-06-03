@@ -1,7 +1,7 @@
 aggr: mean
 batch_size: 32
 buffer_size: 32
-edge_attr: false
+edge_attr: True
 entropy_coef: 0.22612260410569823
 epochs: 14
 eps_clip: 0.17477630558651938

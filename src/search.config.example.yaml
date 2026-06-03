@@ -2,8 +2,8 @@ exclude: null
 grid-search:
 
   "--config":
-    - "iql"
-    - "iql_ns"
+    - "mappo-mlp"
+    - "mappo-rnn"
 
   lr:
     - 0.0001
@@ -20,14 +20,6 @@ grid-search:
   h_dim:
     - 64
     - 128
-
-  evaluation_epsilon:
-    - 0.0
-    - 0.05
-
-  epsilon_anneal_time:
-    - 50000
-    - 200000
 
   t_max:
     - 2050000

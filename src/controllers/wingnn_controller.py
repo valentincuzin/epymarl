@@ -146,7 +146,7 @@ class WINGNNMAC:
             )
 
             loss = self.train_step(agent_inputs, last_actions)
-            up_grad = th.autograd.grad(loss, self.fast_weights)
+            up_grad = th.autograd.grad(loss, self.fast_weights)  # TODO test double derivation with create graph ??
             self.S_dw = list(
                 map(
                     lambda p: (

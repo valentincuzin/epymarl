@@ -1,7 +1,7 @@
 aggr: max
 batch_size: 128
 buffer_size: 128
-edge_attr: false
+edge_attr: True
 entropy_coef: 0.009176752428571189
 epochs: 16
 eps_clip: 0.27686313664988443

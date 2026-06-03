@@ -14,7 +14,7 @@ env_args:
   visual_comm_range: 0.5  # must be the same as comm_range parameter
 
 residual_gat: True
-edge_attr: False
+edge_attr: True
 
 # update the target network every {} training steps
 target_update_interval_or_tau: 0.1

@@ -1,0 +1,15 @@
+batch_size: 64
+buffer_size: 64
+entropy_coef: 0.03
+epochs: 10
+eps_clip: 0.195
+gnn_dim: 512
+grad_norm_clip: 0.1
+h_dim: 512
+lr: 0.0002
+mem_dim: 256
+n_layers: 1
+q_nstep: 10
+residual_gat: true
+standardise_returns: false
+target_update_interval_or_tau: 0.05

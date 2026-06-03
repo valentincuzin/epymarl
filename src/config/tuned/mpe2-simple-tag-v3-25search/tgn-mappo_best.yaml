@@ -12,7 +12,7 @@ common_reward: true
 critic_type: cv_critic
 device: cuda
 dropout_gat: 0.2
-edge_attr: false
+edge_attr: True
 entropy_coef: 0.005220878929794788
 env: gymma
 env_args:

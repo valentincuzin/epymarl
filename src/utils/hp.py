@@ -1,5 +1,3 @@
-import os
-from attr import has
 import yaml
 from optuna.trial import TrialState
 from optuna import Study, Trial, visualization
@@ -80,7 +78,6 @@ def update_hp(study: Study, tuned_path: str) -> dict:
 def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for classic mappo train process
-
     Args:
         trial (Trial):
         hp (dict):
@@ -88,22 +85,44 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["lr"] = trial.suggest_float("lr", 1e-6, 0.1, log=True)
-    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.0, 0.2)
+    hp["lr"] = trial.suggest_float("lr", 0.0001, 0.001, step=0.0001)  # 10
+    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.005, 0.2, step=0.005)  # 4
 
-    hp["q_nstep"] = trial.suggest_int("q_nstep", 5, 20)
-    hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.0, 0.2)
+    hp["q_nstep"] = trial.suggest_int("q_nstep", 5, 15, step=5)  # 3
+    hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.01, 0.1, step=0.01)  # 10
 
-    hp["grad_norm_clip"] = trial.suggest_float("grad_norm_clip", 0.0, 1.0)
-    hp["target_update_interval_or_tau"] = trial.suggest_float(
-        "target_update_interval_or_tau", 0.01, 1.0
-    )
-
-    hp["epochs"] = trial.suggest_int("epochs", 5, 20)
-    hp["batch_size"] = trial.suggest_int("batch_size", 32, 128, step=32)
+    hp["grad_norm_clip"] = trial.suggest_float("grad_norm_clip", 0.1, 1.0, step=0.1)  # 10
+    hp["target_update_interval_or_tau"] = trial.suggest_float("target_update_interval_or_tau", 0.01, 0.1, step=0.01)  # 10
+    hp["standardise_returns"] = trial.suggest_categorical(
+            "standardise_returns", [False, True]
+        )  # 2
+    hp["epochs"] = trial.suggest_int("epochs", 5, 15, step=5)  # 3
+    hp["batch_size"] = trial.suggest_int("batch_size", 32, 128, step=32)  # 4
     hp["buffer_size"] = hp["batch_size"]
 
     return hp
+
+
+def hp_wingnn_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for meta learning mappo
+    search space: 1 296 000 000
+    Args:
+        trial (Trial):
+        hp (dict):
+
+    Returns:
+        dict: updated params
+    """
+    hp = hp_mappo_settings(trial, hp)
+    
+    hp["maml_lr"] = trial.suggest_float("maml_lr", 0.0001, 0.001, step=0.0001)  # 10
+    hp["drop_rate"] = trial.suggest_float("drop_rate", 0.0, 0.2, step=0.05)  # 4
+    hp["early_stop"] = trial.suggest_int("early_stop", 2, 10, step=2)  # 5
+    hp["win_size_max"] = trial.suggest_int("win_size_max", 5, 15, step=5)  # 3
+
+    return hp
+
 
 def hp_qmix_settings(trial: Trial, hp: dict) -> dict:
     """
@@ -187,7 +206,7 @@ def hp_dicg_settings(trial: Trial, hp: dict) -> dict:
 def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     """
     suggest params for mlp architecture
-
+    search space: 1 296 000 000
     Args:
         trial (Trial):
         hp (dict):
@@ -195,8 +214,8 @@ def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
-    hp["n_layers"] = trial.suggest_int("n_layers", 1, 2)
-    hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
+    hp["n_layers"] = trial.suggest_int("n_layers", 1, 2)  # 2
+    hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)  # 8
 
     return hp
 
@@ -212,6 +231,7 @@ def hp_rnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
+    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["mem_dim"] = trial.suggest_int("mem_dim", 64, 512, step=64)
     return hp
@@ -228,18 +248,11 @@ def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
+    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
     return hp
-
-def hp_wingnn_settings(trial: Trial, hp: dict) -> dict:
-    hp = hp_mappo_settings(trial, hp)
-    
-    hp["maml_lr"] = trial.suggest_float("maml_lr", 1e-3, 0.5, log=True)
-    hp["drop_rate"] = trial.suggest_float("drop_rate", 0.0, 0.2, step=0.05)
-    hp["early_stop"] = trial.suggest_int("early_stop", 1, 10)
-    hp["win_size_max"] = trial.suggest_int("win_size_max", 5, 20)
 
 def hp_gnn_rnn_settings(trial: Trial, hp: dict) -> dict:
     """
@@ -252,6 +265,7 @@ def hp_gnn_rnn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
+    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
@@ -271,6 +285,7 @@ def hp_egcn_settings(trial: Trial, hp: dict) -> dict:
     Returns:
         dict: updated params
     """
+    hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
     hp["skipfeats"] = trial.suggest_categorical("skipfeats", [False, True])

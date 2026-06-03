@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#SBATCH --job-name=eg-mappo-s2    # Nom du job
-#SBATCH --output=eg-mappo-s2_%j.log   # Standard output et error log
+#SBATCH --job-name=mappo-mlp    # Nom du job
+#SBATCH --output=mappo-mlp_%j.log   # Standard output et error log
 
 #SBATCH --gres=gpu:1              # Number of GPUs
 #SBATCH --cpus-per-task=1             # Utiliser un seul CPU pour cette tâche (job)
@@ -21,4 +21,6 @@ micromamba activate p313
 
 cd ~/epymarl/
 # run Python script
-python src/main.py --seed=2 --config=eg-mappo --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"
+# python src/main.py --hp_search=25 --seed=0 --config=mappo-mlp --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"
+python src/main.py --seed=1 --config=mappo-mlp --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"
+python src/main.py --seed=2 --config=mappo-mlp --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"

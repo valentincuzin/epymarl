@@ -9,9 +9,9 @@ buffer_size: 48
 batch_size: 48
 
 # Communication setting
-comm_range: 0.5
+comm_range: 1.0
 env_args:
-  visual_comm_range: 0.5  # must be the same as comm_range parameter
+  visual_comm_range: 1.0  # must be the same as comm_range parameter
 
 residual_gat: True
 edge_attr: True

@@ -17,6 +17,7 @@ from runners import REGISTRY as r_REGISTRY
 from utils.general_reward_support import test_alg_config_supports_reward
 from utils.logging import Logger
 from utils.timehelper import time_left, time_str
+from torch_geometric.data import Data
 
 from functools import partial
 import copy
@@ -200,6 +201,10 @@ def run_sequential(args, logger):
             "vshape": (env_info["n_actions"],),
             "group": "agents",
             "dtype": th.float32,
+        },
+        "graphs": {
+            "vshape": (env_info["episode_limit"],),
+            "dtype": Data,
         },
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }

@@ -22,7 +22,7 @@ seed: 0
 
 # --- Logging options ---
 use_tensorboard: False # Log results to tensorboard
-use_wandb: True # Log results to W&B
+use_wandb: False # Log results to W&B
 wandb_team: valentincuzin-ucbl1 # W&B team name
 wandb_project: baselines_6v2_cr1.0 # W&B project name
 wandb_mode: "online" # W&B mode (online/offline)

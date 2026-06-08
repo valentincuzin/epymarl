@@ -131,7 +131,7 @@ class ParallelRunner:
         while True:
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch for each un-terminated env
-            actions, agent_outs = self.mac.select_actions(
+            actions, agent_outs, graphs = self.mac.select_actions(
                 self.batch,
                 t_ep=self.t,
                 t_env=self.t_env,
@@ -142,15 +142,16 @@ class ParallelRunner:
 
             # Update the actions taken
             actions_chosen = {"actions": actions.unsqueeze(1)}
-            self.batch.update(
-                actions_chosen, bs=envs_not_terminated, ts=self.t, mark_filled=False
-            )
+            self.batch.update(actions_chosen, bs=envs_not_terminated, ts=self.t)
 
             # Update the agent_outs taken
             agent_outs = {"agent_outs": agent_outs.detach().unsqueeze(1)}
             self.batch.update(
                 agent_outs, bs=envs_not_terminated, ts=self.t, mark_filled=False
             )
+
+            graphs = {"graphs": graphs.detach()}
+            self.batch.update(graphs, mark_filled=False)
 
             # Send actions to each env
             action_idx = 0

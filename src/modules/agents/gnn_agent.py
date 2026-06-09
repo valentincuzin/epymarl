@@ -85,7 +85,8 @@ class GNNAgent(nn.Module):
 
         h, _, graphs = base_forward(inputs)
         q = self.act_prob(h)
-        return q, None, graphs
+        return q, None, graphs 
+    
 
     def get_parent(self):
         return self.gnn_base

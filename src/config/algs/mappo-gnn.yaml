@@ -41,5 +41,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.2
 
-name: "mappo-gnn"
+name: "mappo-gnn_cr1.0"
 agent: "gnn"

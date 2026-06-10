@@ -5,7 +5,7 @@ from functools import partial
 import torch.nn as nn
 import torch.functional as F
 from torch_geometric.nn import GATv2Conv, MessagePassing, Sequential
-from utils.gnn_utils import batch_from_dense_to_ptg, print_graph, create_gif
+from utils.gnn_utils import batch_from_dense_to_ptg, print_graph, create_gif, attach_att
 from functorch import make_functional_with_buffers
 
 
@@ -37,11 +37,13 @@ class GNNAgentBase(nn.Module):
     def _communication_process(self, raw_inputs, x):
         graphs = self._select_communication(raw_inputs)
         graphs.x = x
-        h = self.gnns(
+        h, att = self.gnns(
             graphs.x,
             graphs.edge_index,
             graphs.edge_attr if self.args.edge_attr else None,
+            return_attention_weights=True
         )
+        attach_att(graphs, att)
         return h, graphs
 
     def _select_communication(self, x):

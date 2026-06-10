@@ -301,10 +301,7 @@ def run_sequential(args, logger):
             if batch.device != args.device:
                 batch.to(args.device)
 
-            if args.name == "ltscg":
-                learner.train(episode_sample, runner.t_env, episode)
-            else:
-                learner.train(batch, runner.t_env, episode)
+            learner.train(batch, runner.t_env, episode)
 
         # Execute test runs once in a while
         n_test_runs = max(1, args.test_nepisode // runner.batch_size)

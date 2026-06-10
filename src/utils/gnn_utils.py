@@ -86,9 +86,12 @@ def print_graph(graphs: pyg.data.Batch, batch_size: int, t: int, args):
     plt.clf()
     plt.close()
 
+def attach_att(graphs: pyg.data.Batch, att: th.Tensor):
+    graphs.edge_index = att[0]  # Just ensure right place and self loops weights
+    graphs.edge_att = att[1]
+    return graphs
 
 def create_gif(unique_token):
-
     images = sorted(glob.glob(f"results/graphs/{unique_token}-*.png"))
     frames = [imageio.imread(p) for p in images]
     imageio.mimsave(f"results/graphs/{unique_token}.gif", frames, duration=0.0004)

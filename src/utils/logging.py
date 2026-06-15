@@ -114,40 +114,45 @@ class Logger:
 
             self._run_obj.log_scalar(key, value, t)
 
-    def log_max_return(self, model, env, env_args: dict, seed):
+    def log_csv_return(self, model, env, env_args: dict, seed):
         
-        self.max_return_csv = "results/max_return.csv"
-        if not os.path.exists(self.max_return_csv):
-            f = open(self.max_return_csv, "w")
-            f.write("model;env;env_args;seed;max_return;test_max_return")
+        self.return_csv = "results/return.csv"
+        if not os.path.exists(self.return_csv):
+            f = open(self.return_csv, "w")
+            f.write("model;env;env_args;seed;test_return")
             f.close()
-        self.df_max_return = pd.read_csv(self.max_return_csv, sep=";")
-        mask = (
-            (self.df_max_return["model"] == model) &
-            (self.df_max_return["env"] == env) &
-            (self.df_max_return["env_args"].apply(lambda d: d == env_args)) &
-            (self.df_max_return["seed"] == seed)
-        )
+        self.df_return = pd.read_csv(self.return_csv, sep=";")
 
-        if mask.any():
-            self.console_logger.warn("This test has already been run and registered in the max_return.csv")
-            return
-        max_return = max(self.stats["return_mean"], key=lambda t: t[1])[1]
-        max_test_return = max(self.stats["test_return_mean"], key=lambda t: t[1])[1]
-        
         # remove seed from env_args
         env_args.pop('seed')
+        if 'visual_comm_range' in env_args.keys():
+            env_args.pop('visual_comm_range')
+
+        env_args_sorted_str = json.dumps(env_args, sort_keys=True, separators=(",", ":"))
+
+
+        if self.df_return.size > 0:
+            mask = (
+                (self.df_return["model"] == model) &
+                (self.df_return["env"] == env) &
+                (self.df_return["env_args"] == env_args_sorted_str) &
+                (self.df_return["seed"] == seed)
+            )
+
+            if mask.any():
+                self.console_logger.warn("This test has already been run and registered in the return.csv")
+                return
+
         new_data = pd.DataFrame({
             "model": [model],
             "env": [env],
-            "env_args": [tuple(sorted(env_args.items()))],
+            "env_args": [env_args_sorted_str],
             "seed": [seed],
-            "max_return": [max_return],
-            "test_max_return": [max_test_return]
+            "test_return": [str([float(t[1]) for t in self.stats["test_return_mean"]])]
         })
 
-        self.df_max_return = pd.concat((self.df_max_return, new_data))
-        self.df_max_return.to_csv("results/max_return.csv", sep=";", index=False)
+        self.df_return = pd.concat((self.df_return, new_data))
+        self.df_return.to_csv("results/return.csv", sep=";", index=False)
 
     def log_matrix(self, key, matrix, t, to_sacred=True):
         """

@@ -114,7 +114,7 @@ class Logger:
 
             self._run_obj.log_scalar(key, value, t)
 
-    def log_max_return(self, model, env, env_args, seed):
+    def log_max_return(self, model, env, env_args: dict, seed):
         
         self.max_return_csv = "results/max_return.csv"
         if not os.path.exists(self.max_return_csv):
@@ -122,7 +122,6 @@ class Logger:
             f.write("model;env;env_args;seed;max_return;test_max_return")
             f.close()
         self.df_max_return = pd.read_csv(self.max_return_csv, sep=";")
-        self.df_max_return["env_args"] = self.df_max_return["env_args"].apply(ast.literal_eval)
         mask = (
             (self.df_max_return["model"] == model) &
             (self.df_max_return["env"] == env) &
@@ -136,10 +135,12 @@ class Logger:
         max_return = max(self.stats["return_mean"], key=lambda t: t[1])[1]
         max_test_return = max(self.stats["test_return_mean"], key=lambda t: t[1])[1]
         
+        # remove seed from env_args
+        env_args.pop('seed')
         new_data = pd.DataFrame({
             "model": [model],
             "env": [env],
-            "env_args": [env_args],
+            "env_args": [tuple(sorted(env_args.items()))],
             "seed": [seed],
             "max_return": [max_return],
             "test_max_return": [max_test_return]

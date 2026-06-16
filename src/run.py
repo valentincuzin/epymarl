@@ -364,6 +364,7 @@ def run_sequential(args, logger):
                     raise optuna.TrialPruned()
 
     runner.close_env()
+    logger.log_csv_return(args.name, args.env_args["key"], args.env_args, args.seed)
     logger.console_logger.info("Finished Training")
 
 

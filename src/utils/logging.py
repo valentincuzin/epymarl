@@ -1,6 +1,9 @@
 from collections import defaultdict
 from hashlib import sha256
 import json
+import os
+import ast
+import pandas as pd
 import logging
 
 import torch as th
@@ -34,12 +37,12 @@ class Logger:
     def setup_wandb(self, config, team_name, project_name, mode):
         import wandb
 
-        assert (
-            team_name is not None and project_name is not None
-        ), "W&B logging requires specification of both `wandb_team` and `wandb_project`."
-        assert (
-            mode in ["offline", "online"]
-        ), f"Invalid value for `wandb_mode`. Received {mode} but only 'online' and 'offline' are supported."
+        assert team_name is not None and project_name is not None, (
+            "W&B logging requires specification of both `wandb_team` and `wandb_project`."
+        )
+        assert mode in ["offline", "online"], (
+            f"Invalid value for `wandb_mode`. Received {mode} but only 'online' and 'offline' are supported."
+        )
 
         self.use_wandb = True
 
@@ -59,7 +62,7 @@ class Logger:
         ).hexdigest()[-10:]
 
         group_name = "_".join([alg_name, env_name, self.config_hash])
-        run_name = f"{env_name}_{alg_name}_{config["agent"]}_s{config["seed"]}"  # ou autre format souhaité
+        run_name = f"{env_name}_{alg_name}_{config['agent']}_s{config['seed']}"  # ou autre format souhaité
 
         self.wandb = wandb.init(
             entity=team_name,
@@ -111,10 +114,50 @@ class Logger:
 
             self._run_obj.log_scalar(key, value, t)
 
+    def log_csv_return(self, model, env, env_args: dict, seed):
+        
+        self.return_csv = "results/return.csv"
+        if not os.path.exists(self.return_csv):
+            f = open(self.return_csv, "w")
+            f.write("model;env;env_args;seed;test_return")
+            f.close()
+        self.df_return = pd.read_csv(self.return_csv, sep=";")
+
+        # remove seed from env_args
+        env_args.pop('seed')
+        if 'visual_comm_range' in env_args.keys():
+            env_args.pop('visual_comm_range')
+
+        env_args_sorted_str = json.dumps(env_args, sort_keys=True, separators=(",", ":"))
+
+
+        if self.df_return.size > 0:
+            mask = (
+                (self.df_return["model"] == model) &
+                (self.df_return["env"] == env) &
+                (self.df_return["env_args"] == env_args_sorted_str) &
+                (self.df_return["seed"] == seed)
+            )
+
+            if mask.any():
+                self.console_logger.warn("This test has already been run and registered in the return.csv")
+                return
+
+        new_data = pd.DataFrame({
+            "model": [model],
+            "env": [env],
+            "env_args": [env_args_sorted_str],
+            "seed": [seed],
+            "test_return": [str([float(t[1]) for t in self.stats["test_return_mean"]])]
+        })
+
+        self.df_return = pd.concat((self.df_return, new_data))
+        self.df_return.to_csv("results/return.csv", sep=";", index=False)
+
     def log_matrix(self, key, matrix, t, to_sacred=True):
         """
         Log a 2D matrix.
-        
+
         key (str): Name of the matrix.
         matrix (numpy.ndarray or torch.Tensor): The matrix to log.
         t (int): The current timestep.

@@ -9,9 +9,9 @@ buffer_size: 128
 batch_size: 128
 
 # Communication setting
-comm_range: 1.0
+comm_range: 0.5
 env_args:
-  visual_comm_range: 1.0  # must be the same as comm_range parameter
+  visual_comm_range: 0.5  # must be the same as comm_range parameter
 
 residual_gat: True
 edge_attr: True
@@ -41,5 +41,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.2
 
-name: "mappo-gnn"
+name: "mappo-gnn_cr0.5"
 agent: "gnn"

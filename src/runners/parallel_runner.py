@@ -31,12 +31,14 @@ class ParallelRunner:
         env_fn = env_REGISTRY[self.args.env]
         env_args = [self.args.env_args.copy() for _ in range(self.batch_size)]
         for i in range(self.batch_size):
-            env_args[i]["seed"] += i  # Remember: env seed are from seed to seed+batch_size always
+            env_args[i]["seed"] += (
+                i  # Remember: env seed are from seed to seed+batch_size always
+            )
             env_args[i]["common_reward"] = self.args.common_reward
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
         if not hasattr(args, "trial"):
-            env_args[0]["prefix_video"]=self.args.unique_token
-            env_args[0]["test_interval"]=self.args.test_interval/10
+            env_args[0]["prefix_video"] = self.args.unique_token
+            env_args[0]["test_interval"] = self.args.test_interval / 10
         self.ps = [
             Process(
                 target=env_worker,
@@ -131,13 +133,16 @@ class ParallelRunner:
         while True:
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch for each un-terminated env
-            actions, agent_outs, graphs = self.mac.select_actions(
+            res = self.mac.select_actions(
                 self.batch,
                 t_ep=self.t,
                 t_env=self.t_env,
                 bs=envs_not_terminated,
                 test_mode=test_mode,
             )
+            actions = res[0]
+            agent_outs = res[1]
+
             cpu_actions = actions.to("cpu").numpy()
 
             # Update the actions taken
@@ -150,8 +155,10 @@ class ParallelRunner:
                 agent_outs, bs=envs_not_terminated, ts=self.t, mark_filled=False
             )
 
-            graphs = {"graphs": graphs.detach()}
-            self.batch.update(graphs, mark_filled=False)
+            if len(res) == 3:
+                graphs = res[2]
+                graphs = {"graphs": graphs.detach()}
+                self.batch.update(graphs, mark_filled=False)
 
             # Send actions to each env
             action_idx = 0

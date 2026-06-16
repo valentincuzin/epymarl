@@ -70,6 +70,32 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
         graphs = pyg.transforms.Distance(norm=False)(graphs)
     return graphs
 
+def compute_graphs_metrics(graphs: list[pyg.data.Batch], batch_size: int, args):
+    res = compute_avg_distance_ep(graphs, batch_size, args)
+
+def compute_avg_distance_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
+    for graph in graphs:
+        pos_batch = graph.pos.view(batch_size, args.n_agents, graph.pos.shape[-1])
+        dist_avg_t = []
+        for b in range(batch_size):
+            pos = pos_batch[b, ...]
+            # sum of distance
+        #avg on batch
+    #list of avg sum of distance
+    return 0
+
+def compute_avg_nb_links_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
+    for graph in graphs:
+        pass
+        # sum all links
+        # divide by num of batch
+    #list of avg nb links
+    return 0
+
+def compute_avg_bandwidth_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
+    avg_nb_links = compute_avg_nb_links_ep(graphs, batch_size, args)
+    # avg_nb_links * args.constraint.lb
+    return 0
 
 def print_graph(graphs: pyg.data.Batch, batch_size: int, t: int, args):
     # retrive only the first graphs batch and create a Data object

@@ -46,6 +46,7 @@ class PPOLearner:
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
 
+        graphs = batch["graphs"]
         if self.args.standardise_rewards:
             self.rew_ms.update(rewards)
             rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
@@ -72,6 +73,8 @@ class PPOLearner:
             self.mac.init_hidden(batch.batch_size)
             for t in range(batch.max_seq_length - 1):
                 agent_outs = self.mac.forward(batch, t=t)
+                if isinstance(agent_outs, tuple):
+                    agent_outs = agent_outs[0]
                 mac_out.append(agent_outs)
             pi = th.stack(mac_out, dim=1)  # Concat over time
 

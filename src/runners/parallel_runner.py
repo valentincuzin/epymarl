@@ -7,6 +7,8 @@ from components.episode_buffer import EpisodeBatch
 from envs import REGISTRY as env_REGISTRY
 from envs import register_smac, register_smacv2
 
+from utils.gnn_utils import compute_graphs_metrics
+
 
 # Based (very) heavily on SubprocVecEnv from OpenAI Baselines
 # https://github.com/openai/baselines/blob/master/baselines/common/vec_env/subproc_vec_env.py
@@ -31,12 +33,14 @@ class ParallelRunner:
         env_fn = env_REGISTRY[self.args.env]
         env_args = [self.args.env_args.copy() for _ in range(self.batch_size)]
         for i in range(self.batch_size):
-            env_args[i]["seed"] += i  # Remember: env seed are from seed to seed+batch_size always
+            env_args[i]["seed"] += (
+                i  # Remember: env seed are from seed to seed+batch_size always
+            )
             env_args[i]["common_reward"] = self.args.common_reward
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
         if not hasattr(args, "trial"):
-            env_args[0]["prefix_video"]=self.args.unique_token
-            env_args[0]["test_interval"]=self.args.test_interval/10
+            env_args[0]["prefix_video"] = self.args.unique_token
+            env_args[0]["test_interval"] = self.args.test_interval / 10
         self.ps = [
             Process(
                 target=env_worker,
@@ -131,26 +135,32 @@ class ParallelRunner:
         while True:
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch for each un-terminated env
-            actions, agent_outs = self.mac.select_actions(
+            res = self.mac.select_actions(
                 self.batch,
                 t_ep=self.t,
                 t_env=self.t_env,
                 bs=envs_not_terminated,
                 test_mode=test_mode,
             )
+            actions = res[0]
+            agent_outs = res[1]
+
             cpu_actions = actions.to("cpu").numpy()
 
             # Update the actions taken
             actions_chosen = {"actions": actions.unsqueeze(1)}
-            self.batch.update(
-                actions_chosen, bs=envs_not_terminated, ts=self.t, mark_filled=False
-            )
+            self.batch.update(actions_chosen, bs=envs_not_terminated, ts=self.t)
 
             # Update the agent_outs taken
             agent_outs = {"agent_outs": agent_outs.detach().unsqueeze(1)}
             self.batch.update(
                 agent_outs, bs=envs_not_terminated, ts=self.t, mark_filled=False
             )
+
+            if len(res) == 3:
+                graphs = res[2]
+                graphs_to_batch = {"graphs": graphs.detach()}
+                self.batch.update(graphs_to_batch, mark_filled=False)
 
             # Send actions to each env
             action_idx = 0
@@ -252,6 +262,8 @@ class ParallelRunner:
             max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         )
         if test_mode and (len(self.test_returns) == n_test_runs):
+            graphs_metrics = compute_graphs_metrics(self.batch["graphs"], self.args.batch_size, self.args)
+            self.logger.log_plot(graphs_metrics)
             self._log(cur_returns, cur_stats, log_prefix)
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
             self._log(cur_returns, cur_stats, log_prefix)

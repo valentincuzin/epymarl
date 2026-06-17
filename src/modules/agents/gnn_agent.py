@@ -5,7 +5,7 @@ from functools import partial
 import torch.nn as nn
 import torch.functional as F
 from torch_geometric.nn import GATv2Conv, MessagePassing, Sequential
-from utils.gnn_utils import batch_from_dense_to_ptg, print_graph, create_gif
+from utils.gnn_utils import batch_from_dense_to_ptg, print_graph, create_gif, attach_att
 from functorch import make_functional_with_buffers
 
 
@@ -31,18 +31,20 @@ class GNNAgentBase(nn.Module):
 
     def forward(self, inputs, hidden_state=None):
         x = self.base(inputs)
-        h = self._communication_process(inputs, x)
-        return h, None
+        h, graphs = self._communication_process(inputs, x)
+        return h, None, graphs
 
     def _communication_process(self, raw_inputs, x):
         graphs = self._select_communication(raw_inputs)
         graphs.x = x
-        h = self.gnns(
+        h, att = self.gnns(
             graphs.x,
             graphs.edge_index,
             graphs.edge_attr if self.args.edge_attr else None,
+            return_attention_weights=True
         )
-        return h
+        attach_att(graphs, att)
+        return h, graphs
 
     def _select_communication(self, x):
         graphs = batch_from_dense_to_ptg(x, self.args.batch_size, self.args)
@@ -83,9 +85,10 @@ class GNNAgent(nn.Module):
         else:
             base_forward = self.gnn_base.forward
 
-        h, _ = base_forward(inputs)
+        h, _, graphs = base_forward(inputs)
         q = self.act_prob(h)
-        return q, None
+        return q, None, graphs 
+    
 
     def get_parent(self):
         return self.gnn_base

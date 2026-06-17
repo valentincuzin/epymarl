@@ -18,7 +18,7 @@ class EpisodeBatch:
         self.max_seq_length = max_seq_length
         self.preprocess = {} if preprocess is None else preprocess
         self.device = device
-
+        
         if data is not None:
             self.data = data
         else:
@@ -72,6 +72,8 @@ class EpisodeBatch:
             if episode_const:
                 print("DEBUG:  ##### it's append!! ###################")
                 self.data.episode_data[field_key] = th.zeros((batch_size, *shape), dtype=dtype, device=self.device)
+            elif field_key == "graphs":
+                self.data.graphs_data = []
             else:
                 self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
 
@@ -97,6 +99,12 @@ class EpisodeBatch:
             elif k in self.data.episode_data:
                 target = self.data.episode_data
                 _slices = slices[0]
+            elif k == "graphs":
+                if mark_filled:
+                    self.data.graphs_data = v.copy()
+                else:
+                    self.data.graphs_data.append(v)
+                continue
             else:
                 raise KeyError("{} not found in transition or episode data".format(k))
 
@@ -128,6 +136,8 @@ class EpisodeBatch:
                 return self.data.episode_data[item]
             elif item in self.data.transition_data:
                 return self.data.transition_data[item]
+            elif item == "graphs":
+                return self.data.graphs_data
             else:
                 raise ValueError
         elif isinstance(item, tuple) and all([isinstance(it, str) for it in item]):
@@ -137,6 +147,8 @@ class EpisodeBatch:
                     new_data.transition_data[key] = self.data.transition_data[key]
                 elif key in self.data.episode_data:
                     new_data.episode_data[key] = self.data.episode_data[key]
+                elif key == "graphs":
+                    new_data.graphs_data = self.data.graphs_data
                 else:
                     raise KeyError("Unrecognised key {}".format(key))
 
@@ -153,6 +165,7 @@ class EpisodeBatch:
                 new_data.transition_data[k] = v[tuple(item)]
             for k, v in self.data.episode_data.items():
                 new_data.episode_data[k] = v[item[0]]
+            new_data.graphs_data = self.data.graphs_data
 
             ret_bs = self._get_num_items(item[0], self.batch_size)
             ret_max_t = self._get_num_items(item[1], self.max_seq_length)
@@ -171,6 +184,7 @@ class EpisodeBatch:
         new_data = SN()
         new_data.transition_data = {}
         new_data.episode_data = {}
+        new_data.graphs_data = []
         return new_data
 
     def _parse_slices(self, items):
@@ -221,6 +235,7 @@ class ReplayBuffer(EpisodeBatch):
                         mark_filled=False)
             self.update(ep_batch.data.episode_data,
                         slice(self.buffer_index, self.buffer_index + ep_batch.batch_size))
+            self.update({"graphs": ep_batch.data.graphs_data}, ts=slice(0, ep_batch.max_seq_length), mark_filled=True)
             self.buffer_index = (self.buffer_index + ep_batch.batch_size)
             self.episodes_in_buffer = max(self.episodes_in_buffer, self.buffer_index)
             self.buffer_index = self.buffer_index % self.buffer_size

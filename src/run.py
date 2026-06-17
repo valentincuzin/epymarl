@@ -17,6 +17,7 @@ from runners import REGISTRY as r_REGISTRY
 from utils.general_reward_support import test_alg_config_supports_reward
 from utils.logging import Logger
 from utils.timehelper import time_left, time_str
+from torch_geometric.data import Data
 
 from functools import partial
 import copy
@@ -201,6 +202,10 @@ def run_sequential(args, logger):
             "group": "agents",
             "dtype": th.float32,
         },
+        "graphs": {
+            "vshape": (env_info["episode_limit"],),
+            "dtype": Data,
+        },
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }
     # For individual rewards in gymmai reward is of shape (1, n_agents)
@@ -296,10 +301,7 @@ def run_sequential(args, logger):
             if batch.device != args.device:
                 batch.to(args.device)
 
-            if args.name == "ltscg":
-                learner.train(episode_sample, runner.t_env, episode)
-            else:
-                learner.train(batch, runner.t_env, episode)
+            learner.train(batch, runner.t_env, episode)
 
         # Execute test runs once in a while
         n_test_runs = max(1, args.test_nepisode // runner.batch_size)
@@ -362,6 +364,7 @@ def run_sequential(args, logger):
                     raise optuna.TrialPruned()
 
     runner.close_env()
+    logger.log_csv_return(args.name, args.env_args["key"], args.env_args, args.seed)
     logger.console_logger.info("Finished Training")
 
 

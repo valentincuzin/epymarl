@@ -7,6 +7,8 @@ from components.episode_buffer import EpisodeBatch
 from envs import REGISTRY as env_REGISTRY
 from envs import register_smac, register_smacv2
 
+from utils.gnn_utils import compute_graphs_metrics
+
 
 # Based (very) heavily on SubprocVecEnv from OpenAI Baselines
 # https://github.com/openai/baselines/blob/master/baselines/common/vec_env/subproc_vec_env.py
@@ -157,8 +159,8 @@ class ParallelRunner:
 
             if len(res) == 3:
                 graphs = res[2]
-                graphs = {"graphs": graphs.detach()}
-                self.batch.update(graphs, mark_filled=False)
+                graphs_to_batch = {"graphs": graphs.detach()}
+                self.batch.update(graphs_to_batch, mark_filled=False)
 
             # Send actions to each env
             action_idx = 0
@@ -260,6 +262,8 @@ class ParallelRunner:
             max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         )
         if test_mode and (len(self.test_returns) == n_test_runs):
+            graphs_metrics = compute_graphs_metrics(self.batch["graphs"], self.args.batch_size, self.args)
+            self.logger.log_plot(graphs_metrics)
             self._log(cur_returns, cur_stats, log_prefix)
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
             self._log(cur_returns, cur_stats, log_prefix)

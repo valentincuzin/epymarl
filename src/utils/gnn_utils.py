@@ -1,7 +1,7 @@
 # code adapted from https://github.com/proroklab/HetGPPO
 
 import torch as th
-
+import numpy as np
 # PYG
 import torch_geometric as pyg
 from torch_geometric.nn.pool import radius_graph
@@ -71,31 +71,44 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     return graphs
 
 def compute_graphs_metrics(graphs: list[pyg.data.Batch], batch_size: int, args):
-    res = compute_avg_distance_ep(graphs, batch_size, args)
+    dist_avg_ep, dist_std_ep = compute_avg_distance_ep(graphs, batch_size, args)
+    res = {
+        "dist_avg_std_ep": (dist_avg_ep, dist_std_ep),
+        "nb_links_avg_ep": compute_avg_nb_links_ep(graphs, batch_size, args),
+        "bandwidth_avg_ep": compute_avg_bandwidth_ep(graphs, batch_size, args),
+    }
+    return res
 
 def compute_avg_distance_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
+    dist_avg_ep = []
+    dist_std_ep = []
     for graph in graphs:
         pos_batch = graph.pos.view(batch_size, args.n_agents, graph.pos.shape[-1])
-        dist_avg_t = []
         for b in range(batch_size):
+            dist_avg_t = []
+            dist_std_t = []
             pos = pos_batch[b, ...]
-            # sum of distance
-        #avg on batch
-    #list of avg sum of distance
-    return 0
+            diff = pos.unsqueeze(1) - pos.unsqueeze(0)
+            dist = th.sqrt(th.sum(diff**2, dim=2))
+            idx_sup = th.triu_indices(dist.shape[0], dist.shape[1], offset=1)
+            dist_unique = dist[idx_sup[0], idx_sup[1]].cpu()
+            dist_avg_t.append(th.mean(dist_unique))
+            dist_std_t.append(th.std(dist_unique))
+        dist_avg_ep.append(np.mean(dist_avg_t))
+        dist_std_ep.append(np.mean(dist_std_t))
+    return dist_avg_ep, dist_std_ep
 
 def compute_avg_nb_links_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
+    # average over batch: sum of links in each graphs
+    nb_links_avg_ep = []
     for graph in graphs:
-        pass
-        # sum all links
-        # divide by num of batch
-    #list of avg nb links
-    return 0
+        num_edges = graph.edge_index.shape[1]
+        nb_links_avg_ep.append(num_edges / batch_size)
+    return nb_links_avg_ep
 
 def compute_avg_bandwidth_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
-    avg_nb_links = compute_avg_nb_links_ep(graphs, batch_size, args)
-    # avg_nb_links * args.constraint.lb
-    return 0
+    nb_links_avg_ep = compute_avg_nb_links_ep(graphs, batch_size, args)
+    return [nb_links * args.comm_constraints["lb"] for nb_links in nb_links_avg_ep]
 
 def print_graph(graphs: pyg.data.Batch, batch_size: int, t: int, args):
     # retrive only the first graphs batch and create a Data object

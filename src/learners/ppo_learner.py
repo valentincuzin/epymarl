@@ -7,7 +7,6 @@ from torch.optim import Adam
 from components.episode_buffer import EpisodeBatch
 from components.standarize_stream import RunningMeanStd
 from modules.critics import REGISTRY as critic_resigtry
-from utils.gnn_utils import compute_graphs_metrics
 
 
 class PPOLearner:
@@ -48,7 +47,6 @@ class PPOLearner:
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
 
         graphs = batch["graphs"]
-        compute_graphs_metrics(graphs, self.args.batch_size, self.args)
         if self.args.standardise_rewards:
             self.rew_ms.update(rewards)
             rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)

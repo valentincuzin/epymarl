@@ -4,6 +4,10 @@ import json
 import os
 import ast
 import pandas as pd
+import wandb
+import warnings
+warnings.filterwarnings('ignore', module='matplotlib')
+import matplotlib.pyplot as plt
 import logging
 
 import torch as th
@@ -35,7 +39,6 @@ class Logger:
         self.console_logger.info("*******************")
 
     def setup_wandb(self, config, team_name, project_name, mode):
-        import wandb
 
         assert team_name is not None and project_name is not None, (
             "W&B logging requires specification of both `wandb_team` and `wandb_project`."
@@ -72,7 +75,6 @@ class Logger:
             name=run_name,
             mode=mode,
         )
-
         self.console_logger.info("*******************")
         self.console_logger.info("WANDB RUN ID:")
         self.console_logger.info(f"{self.wandb.id}")
@@ -87,6 +89,21 @@ class Logger:
         self._run_obj = sacred_run_dict
         self.sacred_info = sacred_run_dict.info
         self.use_sacred = True
+
+    def log_plot(self, stats: dict):
+        for k,v in stats.items():
+            if isinstance(v, list):
+                plt.figure()
+                plt.ylabel(k)
+                plt.plot(v)
+            elif isinstance(v, tuple):
+                means = np.array(v[0])
+                stds = np.array(v[1])
+                plt.figure()
+                plt.ylabel(k)
+                plt.plot(means)
+                plt.fill_between(np.arange(len(means)), means - stds, means + stds, alpha=0.3, label='Mean ± STD') # handle std correctly with plotly ?
+            self.wandb.log({k: wandb.Image(plt)})
 
     def log_stat(self, key, value, t, to_sacred=True):
         self.stats[key].append((t, value))

@@ -32,8 +32,8 @@ class GnnRnnAgentBase(nn.Module):
 
     def forward(self, inputs, hidden_states):
         x = self.base(inputs)
-        h = self._communication_process(inputs, x, hidden_states)
-        return h, None
+        h, g = self._communication_process(inputs, x, hidden_states)
+        return h, None, g
 
     def _communication_process(self, inputs, x, hidden_states):
         graphs = self._select_communication(inputs)
@@ -47,7 +47,7 @@ class GnnRnnAgentBase(nn.Module):
         )
         h_in = hidden_states.reshape(-1, self.args.mem_dim)
         h = self.rnn(h, h_in)
-        return h
+        return h, graphs
 
     def _select_communication(self, x):
         graphs = batch_from_dense_to_ptg(x, self.args.batch_size, self.args)
@@ -73,9 +73,9 @@ class GnnRnnAgent(nn.Module):
         return param.new_zeros(1, self.args.mem_dim)
 
     def forward(self, inputs, hidden_states):
-        h, _ = self.gnn_rnn_base(inputs, hidden_states)
+        h, _, g = self.gnn_rnn_base(inputs, hidden_states)
         q = self.act_prob(h)
-        return q, h
+        return q, h, g
 
     def get_parent(self):
         return self.gnn_rnn_base

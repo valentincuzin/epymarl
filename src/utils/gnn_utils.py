@@ -5,6 +5,7 @@ import numpy as np
 # PYG
 import torch_geometric as pyg
 from torch_geometric.nn.pool import radius_graph
+from torch_scatter import scatter_mean
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -71,44 +72,90 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     return graphs
 
 def compute_graphs_metrics(graphs: list[pyg.data.Batch], batch_size: int, args):
-    dist_avg_ep, dist_std_ep = compute_avg_distance_ep(graphs, batch_size, args)
-    res = {
-        "dist_avg_std_ep": (dist_avg_ep, dist_std_ep),
-        "nb_links_avg_ep": compute_avg_nb_links_ep(graphs, batch_size, args),
-        "bandwidth_avg_ep": compute_avg_bandwidth_ep(graphs, batch_size, args),
+    dist_avg_over_time, dist_std_over_time = compute_avg_std_distance_over_time(graphs, batch_size, args)
+    over_time_res = {
+        "dist_avg_std_over_time": (dist_avg_over_time, dist_std_over_time),
+        "density_over_time": compute_density_over_time(graphs, batch_size, args),
+        "bandwidth_over_time": compute_use_bandwidth_over_time(graphs, batch_size, args),
     }
-    return res
 
-def compute_avg_distance_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
-    dist_avg_ep = []
-    dist_std_ep = []
+    # TODO test everything
+    return over_time_res
+
+def compute_avg_std_distance_over_time(graphs: list[pyg.data.Batch], batch_size: int, args):
     for graph in graphs:
+        pos = graph.pos.view(batch_size, args.n_agents, graph.pos.shape[-1])[0, ...]
+        dist_avg_t = []
+        dist_std_t = []
+        diff = pos.unsqueeze(1) - pos.unsqueeze(0)
+        dist = th.sqrt(th.sum(diff**2, dim=2))
+        idx_sup = th.triu_indices(dist.shape[0], dist.shape[1], offset=1)
+        dist_unique = dist[idx_sup[0], idx_sup[1]].cpu()
+        dist_avg_t.append(th.mean(dist_unique))
+        dist_std_t.append(th.std(dist_unique))
+    return dist_avg_t, dist_std_t
+
+def compute_avg_std_distance_mean(graphs: list[pyg.data.Batch], batch_size: int, args):
+    for graph in graphs:
+        dist_avg_ep = []
+        dist_std_ep = []
         pos_batch = graph.pos.view(batch_size, args.n_agents, graph.pos.shape[-1])
-        for b in range(batch_size):
-            dist_avg_t = []
-            dist_std_t = []
-            pos = pos_batch[b, ...]
+        for batch in range(batch_size):
+            pos = pos_batch[batch, ...]
             diff = pos.unsqueeze(1) - pos.unsqueeze(0)
             dist = th.sqrt(th.sum(diff**2, dim=2))
             idx_sup = th.triu_indices(dist.shape[0], dist.shape[1], offset=1)
             dist_unique = dist[idx_sup[0], idx_sup[1]].cpu()
-            dist_avg_t.append(th.mean(dist_unique))
-            dist_std_t.append(th.std(dist_unique))
-        dist_avg_ep.append(np.mean(dist_avg_t))
-        dist_std_ep.append(np.mean(dist_std_t))
-    return dist_avg_ep, dist_std_ep
+            dist_avg_ep.append(th.mean(dist_unique))
+            dist_std_ep.append(th.std(dist_unique))
+    return np.mean(dist_avg_ep), np.mean(dist_std_ep)
 
-def compute_avg_nb_links_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
-    # average over batch: sum of links in each graphs
-    nb_links_avg_ep = []
+def compute_density_over_time(graphs: list[pyg.data.Batch]):
+    density_over_time = []
     for graph in graphs:
-        num_edges = graph.edge_index.shape[1]
-        nb_links_avg_ep.append(num_edges / batch_size)
-    return nb_links_avg_ep
+        graph_0_ei = pyg.utils.unbatch_edge_index(graph.edge_index, graph.batch)[0]
+        density_over_time.append(graph_0_ei.shape[1]/(graph.max_num_nodes*(graph.max_num_nodes-1)))  # density formula
+    return density_over_time
 
-def compute_avg_bandwidth_ep(graphs: list[pyg.data.Batch], batch_size: int, args):
-    nb_links_avg_ep = compute_avg_nb_links_ep(graphs, batch_size, args)
-    return [nb_links * args.comm_constraints["lb"] for nb_links in nb_links_avg_ep]
+def compute_density_mean(graphs: list[pyg.data.Batch], batch_size: int, args):
+    density_over_time = []
+    for graph in graphs:
+        density_over_time.append(graph.edge_index.shape[1]/batch_size/(graph.max_num_nodes*(graph.max_num_nodes-1)))  # mean density over batch
+    return np.mean(density_over_time)
+
+def compute_avg_degree_over_time(graphs: list[pyg.data.Batch]):
+    avg_degree_over_time = []
+    for graph in graphs:
+        graph_0_ei = pyg.utils.unbatch_edge_index(graph.edge_index, graph.batch)[0]
+        out_deg = pyg.utils.degree(graph_0_ei[0], graph.max_num_nodes)
+        avg_degree_over_time(scatter_mean(out_deg, graph.batch, dim=0)) # mean per graph then per batch of graph
+    return avg_degree_over_time
+
+def compute_avg_degree_mean(graphs: list[pyg.data.Batch]):
+    avg_degree_over_time = []
+    for graph in graphs:
+        out_deg = pyg.utils.degree(graph.edge_index[0], graph.max_num_nodes)
+        avg_degree_over_time(scatter_mean(out_deg, graph.batch, dim=0).mean()) # mean per graph then per batch of graph
+    return np.mean(avg_degree_over_time)
+
+def compute_transitivity_over_time(graphs: list[pyg.data.Batch], batch_size: int, args):
+    transitivity_over_time = []
+    for graph in graphs:
+        ei = pyg.utils.unbatch_edge_index(graph.edge_index, graph.batch)[0]
+        x = graphs.x.view(batch_size, args.n_agents, graph.x.shape[-1])[0, ...]
+        data = pyg.data.Data(x, ei, graph.max_num_nodes)
+        G = pyg.utils.to_networkx(data)
+        transitivity_over_time.append(nx.transitivity(G))
+    return transitivity_over_time
+
+# TODO compute transitivity_mean if not too expensif computation time
+
+def compute_use_bandwidth_over_time(graphs: list[pyg.data.Batch], args):
+    bandwidth_over_time = []
+    for graph in graphs:
+        graph.edge_index = pyg.utils.unbatch_edge_index(graphs.edge_index, graphs.batch)[0]
+        bandwidth_over_time.append(graph.edge_index.shape[1] * args.comm_constraints["lb"])  # TODO constraint lb to put in the code
+    return bandwidth_over_time
 
 def print_graph(graphs: pyg.data.Batch, batch_size: int, t: int, args):
     # retrive only the first graphs batch and create a Data object

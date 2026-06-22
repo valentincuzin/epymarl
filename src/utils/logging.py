@@ -23,6 +23,10 @@ class Logger:
         self.use_sacred = False
         self.use_hdf = False
 
+        logging.getLogger("PIL").setLevel(logging.INFO)
+        logging.getLogger("urllib3").setLevel(logging.INFO)
+        logging.getLogger("matplotlib").setLevel(logging.INFO)
+
         self.stats = defaultdict(lambda: [])
 
     def setup_tb(self, directory_name):
@@ -104,6 +108,20 @@ class Logger:
                 plt.plot(means)
                 plt.fill_between(np.arange(len(means)), means - stds, means + stds, alpha=0.3, label='Mean ± STD') # handle std correctly with plotly ?
             self.wandb.log({k: wandb.Image(plt)})
+            plt.close()
+
+    def log_rew_plot(self, name: str, stats: list, stds: list, associed_rew: list):
+        plt.figure()
+        plt.ylabel(name)
+        plt.plot(stats)
+        means = np.array(stats)
+        stds = np.array(stds)
+        plt.fill_between(np.arange(len(means)), means - stds, means + stds, alpha=0.3, label='Mean ± STD') # handle std correctly with plotly ?
+        associed_rew = [min(stat, rew) for stat, rew in zip(stats, associed_rew)]
+        x = np.arange(len(associed_rew))
+        plt.bar(x, associed_rew, width=0.3)
+        self.wandb.log({name: wandb.Image(plt)})
+        plt.close()
 
     def log_stat(self, key, value, t, to_sacred=True):
         self.stats[key].append((t, value))

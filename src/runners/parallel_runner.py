@@ -247,6 +247,12 @@ class ParallelRunner:
         cur_stats = self.test_stats if test_mode else self.train_stats
         cur_returns = self.test_returns if test_mode else self.train_returns
         log_prefix = "test_" if test_mode else ""
+        
+        dist_avg_over_time = None
+        if "dist_avg_over_time" in final_env_infos[0].keys():
+            dist_avg_over_time, dist_std_over_time, associed_rew_over_time = final_env_infos[0].pop("dist_avg_over_time")
+            for b in range(1, self.batch_size):
+                final_env_infos[b].pop("dist_avg_over_time")
         infos = [cur_stats] + final_env_infos
         cur_stats.update(
             {
@@ -262,8 +268,12 @@ class ParallelRunner:
             max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         )
         if test_mode and (len(self.test_returns) == n_test_runs):
-            graphs_metrics = compute_graphs_metrics(self.batch["graphs"], self.args.batch_size, self.args)
-            self.logger.log_plot(graphs_metrics)
+            if self.args.mac == "comm_mac":
+                over_time_metrics, mean_metrics = compute_graphs_metrics(self.batch["graphs"], self.args.batch_size, self.args, cur_stats["n_episodes"])
+                self.logger.log_plot(over_time_metrics)
+                cur_stats.update(mean_metrics)
+            if dist_avg_over_time is not None:
+                self.logger.log_rew_plot("dist_avg_over_time", dist_avg_over_time, dist_std_over_time, associed_rew_over_time)
             self._log(cur_returns, cur_stats, log_prefix)
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
             self._log(cur_returns, cur_stats, log_prefix)

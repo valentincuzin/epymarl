@@ -5,6 +5,7 @@ import gymnasium as gym
 from gymnasium.spaces import flatdim
 from gymnasium.wrappers import TimeLimit, RecordVideo
 import numpy as np
+import torch as th
 
 from .multiagentenv import MultiAgentEnv
 from .wrappers import FlattenObservation
@@ -78,6 +79,9 @@ class GymmaWrapper(MultiAgentEnv):
         self.episode_limit = time_limit
         self._obs = None
         self._info = None
+        self.dist_avg = []
+        self.associed_rew = []
+        self.dist_std = []
 
         self.longest_action_space = max(self._env.action_space, key=lambda x: x.n)
         self.longest_observation_space = max(
@@ -112,18 +116,32 @@ class GymmaWrapper(MultiAgentEnv):
             for o in obs
         ]
 
+    def comput_avg_dist(self, obs):
+        pos = th.tensor(obs)[:, :2]
+        diff = pos.unsqueeze(1) - pos.unsqueeze(0)
+        dist = th.sqrt(th.sum(diff**2, dim=2))
+        idx_sup = th.triu_indices(dist.shape[0], dist.shape[1], offset=1)
+        return dist[idx_sup[0], idx_sup[1]].mean().cpu().item(), dist[idx_sup[0], idx_sup[1]].std().cpu().item()
+
     def step(self, actions):
         """Returns obss, reward, terminated, truncated, info"""
         actions = [int(a) for a in actions]
         obs, reward, done, truncated, self._info = self._env.step(actions)
         self._obs = self._pad_observation(obs)
-
         if self.common_reward and isinstance(reward, Iterable):
             reward = float(self.reward_agg_fn(reward))
         elif not self.common_reward and not isinstance(reward, Iterable):
             warnings.warn(
                 "common_reward is False but received scalar reward from the environment, returning reward as is"
             )
+        
+        dist_avg, dist_std = self.comput_avg_dist(self._obs)
+        self.dist_avg.append(dist_avg)
+        self.associed_rew.append(reward)
+        self.dist_std.append(dist_std)
+        self._info["dist_avg"] = np.mean(self.dist_avg)
+        self._info["dist_avg_over_time"] = (self.dist_avg, self.dist_std, self.associed_rew)
+        self._info["dist_std"] = np.mean(self.dist_std)
 
         if isinstance(done, Iterable):
             done = all(done)
@@ -172,6 +190,11 @@ class GymmaWrapper(MultiAgentEnv):
         """Returns initial observations and info"""
         obs, info = self._env.reset(seed=seed, options=options)
         self._obs = self._pad_observation(obs)
+        info["dist_avg"], info["dist_std"] = self.comput_avg_dist(self._obs)
+        self.dist_avg = [info["dist_avg"]]
+        self.associed_rew = [0.0]
+        info["dist_avg_over_time"] = self.dist_avg
+        self.dist_std = [info["dist_std"]]
         return self._obs, info
 
     def render(self):

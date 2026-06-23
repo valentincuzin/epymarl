@@ -7,7 +7,7 @@ from components.episode_buffer import EpisodeBatch
 from envs import REGISTRY as env_REGISTRY
 from envs import register_smac, register_smacv2
 
-from utils.gnn_utils import compute_graphs_metrics
+from utils.gnn_utils import compute_graphs_metrics, create_gif
 
 
 # Based (very) heavily on SubprocVecEnv from OpenAI Baselines
@@ -40,7 +40,7 @@ class ParallelRunner:
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
         if not hasattr(args, "trial"):
             env_args[0]["prefix_video"] = self.args.unique_token
-            env_args[0]["test_interval"] = self.args.test_interval / 10
+            env_args[0]["test_interval"] = self.args.save_model_interval // self.args.batch_size
         self.ps = [
             Process(
                 target=env_worker,
@@ -66,7 +66,8 @@ class ParallelRunner:
         self.train_stats = {}
         self.test_stats = {}
 
-        self.log_train_stats_t = -100000
+        self.log_train_stats_t = -10000000
+        self.log_graphs_t = -10000000
 
     def setup(self, scheme, groups, preprocess, mac):
         self.new_batch = partial(
@@ -267,6 +268,9 @@ class ParallelRunner:
         n_test_runs = (
             max(1, self.args.test_nepisode // self.batch_size) * self.batch_size
         )
+        if self.args.mac == "comm_mac" and self.t_env - self.log_graphs_t >= self.args.save_model_interval:
+            create_gif(self.batch["graphs"], self.args.batch_size, self.args.unique_token, self.args.n_agents, self.t_env)
+            self.log_graphs_t = self.t_env
         if test_mode and (len(self.test_returns) == n_test_runs):
             if self.args.mac == "comm_mac":
                 over_time_metrics, mean_metrics = compute_graphs_metrics(self.batch["graphs"], self.args.batch_size, self.args, cur_stats["n_episodes"])

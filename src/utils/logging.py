@@ -55,6 +55,8 @@ class Logger:
 
         alg_name = config["name"]
         env_name = config["env"]
+        self.comm_alg = config["mac"] == "comm_mac"
+
         if "map_name" in config["env_args"]:
             env_name += "_" + config["env_args"]["map_name"]
         elif "key" in config["env_args"]:
@@ -154,7 +156,7 @@ class Logger:
         self.return_csv = "results/return.csv"
         if not os.path.exists(self.return_csv):
             f = open(self.return_csv, "w")
-            f.write("model;env;env_args;seed;test_return")
+            f.write("model;env;env_args;seed;test_return;test_density")
             f.close()
         self.df_return = pd.read_csv(self.return_csv, sep=";")
 
@@ -183,7 +185,8 @@ class Logger:
             "env": [env],
             "env_args": [env_args_sorted_str],
             "seed": [seed],
-            "test_return": [str([float(t[1]) for t in self.stats["test_return_mean"]])]
+            "test_return": [str([float(t[1]) for t in self.stats["test_return_mean"]])],
+            "test_density": [str([float(t[1]) for t in self.stats["test_density_mean"]])] if "test_density_mean" in self.stats.keys() else np.nan
         })
 
         self.df_return = pd.concat((self.df_return, new_data))

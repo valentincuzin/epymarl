@@ -60,11 +60,13 @@ class GymmaWrapper(MultiAgentEnv):
         if self.test_interval is not None and prefix_video is not None:
             if isinstance(self.prefix_video, tuple):
                     self.prefix_video = self.prefix_video[0]
+            self.log_interval_t = -100000
             def step_trigger(step: int):
                 if isinstance(self.test_interval, tuple):
                     self.test_interval = self.test_interval[0]
-                if step%self.test_interval == 0:
+                if step - self.log_interval_t >= self.test_interval:
                     print("starting record video...")
+                    self.log_interval_t = step
                     return True
                 return False
             self._env = RecordVideo(self._env, video_folder=f"results/videos/{self.prefix_video}", step_trigger=step_trigger)

@@ -1,6 +1,7 @@
 # code adapted from https://github.com/proroklab/HetGPPO
 
 import torch as th
+import torch.nn.functional as F
 import numpy as np
 # PYG
 import torch_geometric as pyg
@@ -15,6 +16,7 @@ import matplotlib.pyplot as plt
 
 import imageio
 import glob
+import os
 
 
 def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
@@ -82,41 +84,52 @@ def compute_graphs_metrics(graphs: list[pyg.data.Batch], batch_size: int, args, 
         "avg_shortest_temporal_path_length": compute_avg_shortest_temporal_path_length(graphs, batch_size, args)*n_episodes,
         "reachability_ratio": compute_reachability_ratio(graphs, batch_size, args)*n_episodes,
     }
-    
-    dist_avg_over_time, dist_std_over_time = compute_avg_std_distance_over_time(graphs, batch_size, args)
+    entropies_over_time = compute_entropies_over_time(graphs, batch_size, args)
     over_time_res = {
-        # "dist_avg_std_over_time": (dist_avg_over_time, dist_std_over_time),
         "density_over_time": compute_density_over_time(graphs),
         "bandwidth_over_time": compute_use_bandwidth_over_time(graphs, args),
-        "transitivity_over_time": compute_transitivity_over_time(graphs, batch_size, args)
+        "transitivity_over_time": compute_transitivity_over_time(graphs, batch_size, args),
+        "entropies_over_time": entropies_over_time
     }
+    mean_res["entropies"] = np.mean(entropies_over_time)*n_episodes
+
     return over_time_res, mean_res
 
-def compute_avg_std_distance_over_time(graphs: list[pyg.data.Batch], batch_size: int, args):
-    dist_avg_t = []
-    dist_std_t = []
-    for graph in graphs:
-        pos = graph.pos.view(batch_size, args.n_agents, graph.pos.shape[-1])[0, ...]
-        diff = pos.unsqueeze(1) - pos.unsqueeze(0)
-        dist = th.sqrt(th.sum(diff**2, dim=2))
-        idx_sup = th.triu_indices(dist.shape[0], dist.shape[1], offset=1)
-        dist_unique = dist[idx_sup[0], idx_sup[1]].cpu()
-        dist_avg_t.append(th.mean(dist_unique).item())
-        dist_std_t.append(th.std(dist_unique).item())
-    return dist_avg_t, dist_std_t
+# implemented for all
+# def compute_avg_std_distance_over_time(graphs: list[pyg.data.Batch], batch_size: int, args):
+#     dist_avg_t = []
+#     dist_std_t = []
+#     for graph in graphs:
+#         pos = graph.pos.view(batch_size, args.n_agents, graph.pos.shape[-1])[0, ...]
+#         diff = pos.unsqueeze(1) - pos.unsqueeze(0)
+#         dist = th.sqrt(th.sum(diff**2, dim=2))
+#         idx_sup = th.triu_indices(dist.shape[0], dist.shape[1], offset=1)
+#         dist_unique = dist[idx_sup[0], idx_sup[1]].cpu()
+#         dist_avg_t.append(th.mean(dist_unique).item())
+#         dist_std_t.append(th.std(dist_unique).item())
+#     return dist_avg_t, dist_std_t
 
-def compute_avg_distance_mean(graphs: list[pyg.data.Batch], batch_size: int, args):
+# def compute_avg_distance_mean(graphs: list[pyg.data.Batch], batch_size: int, args):
+#     for graph in graphs:
+#         dist_avg_ep = []
+#         pos_batch = graph.pos.view(batch_size, args.n_agents, graph.pos.shape[-1])
+#         for batch in range(batch_size):
+#             pos = pos_batch[batch, ...]
+#             diff = pos.unsqueeze(1) - pos.unsqueeze(0)
+#             dist = th.sqrt(th.sum(diff**2, dim=2))
+#             idx_sup = th.triu_indices(dist.shape[0], dist.shape[1], offset=1)
+#             dist_unique = dist[idx_sup[0], idx_sup[1]].cpu()
+#             dist_avg_ep.append(th.mean(dist_unique))
+#     return np.mean(dist_avg_ep)
+
+def compute_entropies_over_time(graphs, batch_size, args):
+    entropies_over_time = []
     for graph in graphs:
-        dist_avg_ep = []
-        pos_batch = graph.pos.view(batch_size, args.n_agents, graph.pos.shape[-1])
-        for batch in range(batch_size):
-            pos = pos_batch[batch, ...]
-            diff = pos.unsqueeze(1) - pos.unsqueeze(0)
-            dist = th.sqrt(th.sum(diff**2, dim=2))
-            idx_sup = th.triu_indices(dist.shape[0], dist.shape[1], offset=1)
-            dist_unique = dist[idx_sup[0], idx_sup[1]].cpu()
-            dist_avg_ep.append(th.mean(dist_unique))
-    return np.mean(dist_avg_ep)
+        x = graph.x.view(batch_size, args.n_agents, graph.x.shape[-1])
+        p = F.softmax(x, dim=-1)
+        entropy = -(p * th.log2(p + 1e-12)).sum(dim=-1)
+        entropies_over_time.append(entropy.mean().item())
+    return entropies_over_time
 
 def compute_density_over_time(graphs: list[pyg.data.Batch]):
     density_over_time = []
@@ -216,30 +229,45 @@ def compute_use_bandwidth_over_time(graphs: list[pyg.data.Batch], args):
         bandwidth_over_time.append(graph.edge_index.shape[1] * args.comm_constraints["lb"])  # TODO constraint lb to put in the code
     return bandwidth_over_time
 
-def print_graph(graphs: pyg.data.Batch, batch_size: int, t: int, args):
-    # retrive only the first graphs batch and create a Data object
-    graph = pyg.data.Data()
-    graph.x = graphs.x.view(batch_size, args.n_agents, graphs.x.shape[-1])[0, ...]
-    graph.pos = graphs.pos.view(batch_size, args.n_agents, graphs.pos.shape[-1])[0, ...]
-    graph.vel = graphs.vel.view(batch_size, args.n_agents, graphs.vel.shape[-1])[0, ...]
-    # slice only node in range of batch_size
-    graph.edge_index = pyg.utils.unbatch_edge_index(graphs.edge_index, graphs.batch)[0]
-    G = pyg.utils.to_networkx(graph)
-    colors = [n for n in G.nodes()]
-    nx.draw(G, graph.pos.cpu().numpy(), node_size=20, arrowsize=5, node_color=colors)
-    plt.savefig(f"results/graphs/{args.unique_token}-{t}.png")
-    plt.clf()
-    plt.close()
-
 def attach_att(graphs: pyg.data.Batch, att: th.Tensor):
     graphs.edge_index = att[0]  # Just ensure right place and self loops weights
     graphs.edge_att = att[1]
     return graphs
 
-def create_gif(unique_token):
-    images = sorted(glob.glob(f"results/graphs/{unique_token}-*.png"))
+def print_graph(graphs: pyg.data.Batch, t: int, batch_size, n_agents, unique_token):
+    # retrive only the first graphs batch and create a Data object
+    graph = pyg.data.Data()
+    graph.x = graphs.x.view(batch_size, n_agents, graphs.x.shape[-1])[0, ...]
+    graph.pos = graphs.pos.view(batch_size, n_agents, graphs.pos.shape[-1])[0, ...].cpu().numpy()
+    graph.vel = graphs.vel.view(batch_size, n_agents, graphs.vel.shape[-1])[0, ...]
+    # slice only node in range of batch_size
+    graph.edge_index = pyg.utils.unbatch_edge_index(graphs.edge_index, graphs.batch)[0]
+
+    mask_g0 = (
+        (graphs.batch[graphs.edge_index[0]] == 0) &
+        (graphs.batch[graphs.edge_index[1]] == 0)
+    )
+
+    graph.edge_att =  graphs.edge_att[mask_g0].cpu().numpy()
+    G = pyg.utils.to_networkx(graph)
+    colors = [n for n in G.nodes()]
+    plt.figure()
+    nx.draw(G, graph.pos, node_size=20, arrowsize=5, width=graph.edge_att*5, node_color=colors)
+    plt.savefig(f"results/graphs/raw_img/{unique_token}-t_{t}.png")
+    plt.clf()
+    plt.close()
+
+def create_gif(graphs: list[pyg.data.Batch], batch_size, unique_token, n_agents, current_step):
+    unique_token += "_t__" + str(current_step)
+    old_img = glob.glob("results/graphs/raw_img/*.png")
+    for img in old_img:
+        os.remove(img)
+    for t, graph in enumerate(graphs):
+        print_graph(graph, t, batch_size, n_agents, unique_token)
+    images = glob.glob(f"results/graphs/raw_img/{unique_token}-*.png")
+    images = sorted(images, key=lambda p: int(p.split("-t_")[-1].split(".")[0]))
     frames = [imageio.imread(p) for p in images]
-    imageio.mimsave(f"results/graphs/{unique_token}.gif", frames, duration=0.0004)
+    imageio.mimsave(f"results/graphs/{unique_token}.mp4", frames, fps=5)
 
 
 def _get_pos_from_x(x: th.Tensor, task_name: str):

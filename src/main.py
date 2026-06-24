@@ -144,10 +144,8 @@ if __name__ == "__main__":
         except FileNotFoundError as e:
             print(f"WARNING: no tuned config found: {str(e)}...")
 
-    if hasattr(config_dict, "comm_range") and config_dict["comm_range"] > 0.0:
-        config_dict["env_args"]["visual_comm_range"] = config_dict[
-            "comm_range"
-        ]  # add visu
+    if config_dict["mac"] == "comm_mac":
+        config_dict["env_args"]["visual_comm_range"] = config_dict["comm_constraints"]["cr"]  # add visu
     # now add all the config to sacred
     ex.add_config(config_dict)
 

@@ -18,7 +18,25 @@ import imageio
 import glob
 import os
 
+def apply_comm_constraints(graphs: pyg.data.Batch, comm_constraints: dict): 
+    # apply noise
+    noise = th.randn_like(graphs.x) * comm_constraints["nm"]
+    graphs.x += noise
 
+    # random losses of messages
+    mask = th.rand_like(graphs.edge_index[0].float()) > comm_constraints["cl"]
+    graphs.edge_index = graphs.edge_index[:, mask]
+
+    # TODO latency
+
+    # verify bandwidth
+    msg_size = graphs.x.size(-1) * graphs.x.element_size()
+    assert msg_size < comm_constraints["lb"]*2, "the msg size is to big"
+    if msg_size > comm_constraints["lb"]:
+        graphs.x = graphs.x.bfloat16()
+
+    return graphs
+    
 def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     if isinstance(x, list):
         x = th.tensor(x)
@@ -41,11 +59,11 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
     graphs.vel = vel
     graphs.edge_attr = None
 
-    if args.comm_range is None:
+    if args.comm_constraints["cr"] is None:
         graphs.edge_index = th.empty((2, 0), device=x.device, dtype=th.long)
         graphs = graphs.to(x.device)
         return graphs
-    if args.comm_range == -1:  # no comm range
+    if args.comm_constraints["cr"] == -1:  # no comm range
         adjacency = th.ones(
             args.n_agents, args.n_agents, device=x.device, dtype=th.long
         )
@@ -69,6 +87,7 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
             graphs.pos, batch=graphs.batch, r=args.comm_range, loop=False
         )
     graphs = graphs.to(x.device)
+    graphs = apply_comm_constraints(graphs, args.comm_constraints)
     # old todo: prove the improvment of this component => better
     # Add relative coordonate and distance in edge_attr in all the graph
     if pos is not None:
@@ -225,8 +244,9 @@ def compute_transitivity_over_time(graphs: list[pyg.data.Batch], batch_size: int
 def compute_use_bandwidth_over_time(graphs: list[pyg.data.Batch], args):
     bandwidth_over_time = []
     for graph in graphs:
+        msg_size = graphs.x.size(-1) * graphs.x.element_size()
         graph.edge_index = pyg.utils.unbatch_edge_index(graph.edge_index, graph.batch)[0]
-        bandwidth_over_time.append(graph.edge_index.shape[1] * args.comm_constraints["lb"])  # TODO constraint lb to put in the code
+        bandwidth_over_time.append(graph.edge_index.shape[1] * msg_size)
     return bandwidth_over_time
 
 def attach_att(graphs: pyg.data.Batch, att: th.Tensor):

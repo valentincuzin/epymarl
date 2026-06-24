@@ -2,10 +2,9 @@
 
 This repo based on EPyMARL intend to implement and test new communication model based on GNNs.
 
-1. ~~Add mp4 visualization record on one env of training~~
-2. Add visualization of the dynamic graphs at least in test
-3. ~~Add good name handler in wandb + in config.yaml files~~
-3. Extensive test on my models (3 seeds) for week prof of my intuition
+1. Adding Communication Constraint
+2. Enable the PP battle mode
+3. Add model-based baseline
 
 
 ## Installation process

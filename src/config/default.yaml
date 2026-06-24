@@ -17,8 +17,11 @@ env_args: {
 } # Arguments for the environment
 
 comm_constraints: {
-  lb: 2048 # bytes
-
+  lb: 2048,  # bytes per messages
+  cr: 1.0,  # max comm range  # -1 for fully connected possibility comm range
+  nm: 0.01,  # noisy messages std
+  cl: 0.01,  # communication loss
+  lat: 0.01,  # latency
 }
 
 use_cuda: True # Use gpu by default unless it isn't available

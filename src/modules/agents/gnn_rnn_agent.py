@@ -6,7 +6,7 @@ import torch.nn.functional as F
 # PYG
 from torch_geometric.nn import GATv2Conv, MessagePassing
 
-from utils.gnn_utils import batch_from_dense_to_ptg
+from utils.gnn_utils import batch_from_dense_to_ptg, attach_att
 
 class GnnRnnAgentBase(nn.Module):
     def __init__(self, input_shape, args):
@@ -38,13 +38,14 @@ class GnnRnnAgentBase(nn.Module):
     def _communication_process(self, inputs, x, hidden_states):
         graphs = self._select_communication(inputs)
         graphs.x = x
-        h = F.relu(
-            self.gnns(
+        h, att = self.gnns(
                 graphs.x,
                 graphs.edge_index,
                 graphs.edge_attr if self.args.edge_attr else None,
+                return_attention_weights=True
             )
-        )
+        h = F.relu(h)
+        graphs = attach_att(graphs, att)
         h_in = hidden_states.reshape(-1, self.args.mem_dim)
         h = self.rnn(h, h_in)
         return h, graphs

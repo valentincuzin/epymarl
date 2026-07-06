@@ -129,12 +129,13 @@ if __name__ == "__main__":
     config_dict["unique_token"] = (
         f"{config_dict['name']}_seed{config_dict['seed']}_{map_name}_{datetime.datetime.now()}"
     )
+    generic_name = config_dict['name'].split('_')[0]
     tuned_path = os.path.join(
         os.path.dirname(__file__),
         "config",
         "tuned",
         map_name,
-        f"{config_dict['name']}_best.yaml",
+        f"{generic_name}_best.yaml",
     )
     config_dict["tuned_path"] = tuned_path
     if config_dict["hp_search"] == 0:

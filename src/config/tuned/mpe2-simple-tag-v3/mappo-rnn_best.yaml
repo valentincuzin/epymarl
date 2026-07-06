@@ -2,7 +2,7 @@ batch_size: 128
 buffer_size: 128
 entropy_coef: 0.02
 epochs: 10
-eps_clip: 0.10500000000000001
+eps_clip: 0.105
 grad_norm_clip: 0.5
 h_dim: 320
 lr: 0.001

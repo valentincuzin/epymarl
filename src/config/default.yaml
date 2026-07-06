@@ -17,11 +17,11 @@ env_args: {
 } # Arguments for the environment
 
 comm_constraints: {
-  lb: 2048,  # bytes per messages
+  lb: 100000000,  # bytes per messages
   cr: 1.0,  # max comm range  # -1 for fully connected possibility comm range
-  nm: 0.01,  # noisy messages std
-  cl: 0.01,  # communication loss
-  lat: 0.01,  # latency
+  nm: 0.00,  # noisy messages std
+  cl: 0.00,  # communication loss
+  lat: 0.00,  # TODO latency
 }
 
 use_cuda: True # Use gpu by default unless it isn't available
@@ -32,7 +32,7 @@ seed: 0
 use_tensorboard: False # Log results to tensorboard
 use_wandb: True # Log results to W&B
 wandb_team: valentincuzin-ucbl1 # W&B team name
-wandb_project: baselines_6v2_new_metrics # W&B project name
+wandb_project: 6v2_medium_cc # W&B project name
 wandb_mode: "online" # W&B mode (online/offline)
 wandb_save_model: False # Save models to W&B (only done if use_wandb is True and save_model is True)
 save_model: True # Save the models to disk

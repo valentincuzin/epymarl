@@ -20,8 +20,8 @@ import os
 
 def apply_comm_constraints(graphs: pyg.data.Batch, comm_constraints: dict): 
     # apply noise
-    noise = th.randn_like(graphs.x) * comm_constraints["nm"]
-    graphs.x += noise
+    # noise = th.randn_like(graphs.x) * comm_constraints["nm"]
+    # graphs.x += noise
 
     # random losses of messages
     mask = th.rand_like(graphs.edge_index[0].float()) > comm_constraints["cl"]
@@ -32,8 +32,9 @@ def apply_comm_constraints(graphs: pyg.data.Batch, comm_constraints: dict):
     # verify bandwidth
     msg_size = graphs.x.size(-1) * graphs.x.element_size()
     assert msg_size < comm_constraints["lb"]*2, "the msg size is to big"
-    if msg_size > comm_constraints["lb"]:
-        graphs.x = graphs.x.bfloat16()
+    # TODO
+    #  if msg_size > comm_constraints["lb"]:
+    #     graphs.x = graphs.x.bfloat16()
 
     return graphs
     
@@ -84,7 +85,7 @@ def batch_from_dense_to_ptg(x, batch_size, args) -> pyg.data.Batch:
         if pos is None:
             raise RuntimeError("from_pos topology needs positions as input")
         graphs.edge_index = radius_graph(
-            graphs.pos, batch=graphs.batch, r=args.comm_range, loop=False
+            graphs.pos, batch=graphs.batch, r=args.comm_constraints["cr"], loop=False
         )
     graphs = graphs.to(x.device)
     graphs = apply_comm_constraints(graphs, args.comm_constraints)
@@ -244,7 +245,7 @@ def compute_transitivity_over_time(graphs: list[pyg.data.Batch], batch_size: int
 def compute_use_bandwidth_over_time(graphs: list[pyg.data.Batch], args):
     bandwidth_over_time = []
     for graph in graphs:
-        msg_size = graphs.x.size(-1) * graphs.x.element_size()
+        msg_size = graph.x.size(-1) * graph.x.element_size()
         graph.edge_index = pyg.utils.unbatch_edge_index(graph.edge_index, graph.batch)[0]
         bandwidth_over_time.append(graph.edge_index.shape[1] * msg_size)
     return bandwidth_over_time
@@ -279,15 +280,14 @@ def print_graph(graphs: pyg.data.Batch, t: int, batch_size, n_agents, unique_tok
 
 def create_gif(graphs: list[pyg.data.Batch], batch_size, unique_token, n_agents, current_step):
     unique_token += "_t__" + str(current_step)
-    old_img = glob.glob("results/graphs/raw_img/*.png")
-    for img in old_img:
-        os.remove(img)
     for t, graph in enumerate(graphs):
         print_graph(graph, t, batch_size, n_agents, unique_token)
     images = glob.glob(f"results/graphs/raw_img/{unique_token}-*.png")
     images = sorted(images, key=lambda p: int(p.split("-t_")[-1].split(".")[0]))
     frames = [imageio.imread(p) for p in images]
     imageio.mimsave(f"results/graphs/{unique_token}.mp4", frames, fps=5)
+    for img in images:
+        os.remove(img)
 
 
 def _get_pos_from_x(x: th.Tensor, task_name: str):

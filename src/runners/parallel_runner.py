@@ -39,8 +39,9 @@ class ParallelRunner:
             env_args[i]["common_reward"] = self.args.common_reward
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
         if not hasattr(args, "trial"):
-            env_args[0]["prefix_video"] = self.args.unique_token
-            env_args[0]["test_interval"] = self.args.save_model_interval // self.args.batch_size
+            pass
+            # env_args[0]["prefix_video"] = self.args.unique_token
+            # env_args[0]["test_interval"] = self.args.save_model_interval // self.args.batch_size
         self.ps = [
             Process(
                 target=env_worker,
@@ -155,7 +156,7 @@ class ParallelRunner:
             # Update the agent_outs taken
             agent_outs = {"agent_outs": agent_outs.detach().unsqueeze(1)}
             self.batch.update(
-                agent_outs, bs=envs_not_terminated, ts=self.t, mark_filled=False
+                agent_outs, bs=envs_not_terminated, ts=self.t
             )
 
             if len(res) == 3:

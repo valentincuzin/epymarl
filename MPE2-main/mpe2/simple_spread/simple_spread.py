@@ -208,7 +208,7 @@ class Scenario(BaseScenario):
             agent.name = f"agent_{i}"
             agent.collide = True
             agent.silent = True
-            agent.size = 0.15
+            agent.size = 0.075
             agent.obs_range = self.observation_range
             agent.comm_range = self.visual_comm_range
         # add landmarks

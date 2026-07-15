@@ -358,9 +358,12 @@ class SimpleEnv(AECEnv):
                     self.screen, (0, 0, 0), (x, y), obs_radius, 1
                 )  # borders
             if entity.comm_range is not None:
-                adversary_poses = [entity.state.p_pos for entity in self.world.entities if entity.adversary]
-                for o, other_pos in enumerate(adversary_poses):
-                    if o == e or not self.world.entities[e].adversary:  # other == me
+                if hasattr(entity, "adversary"):
+                    agent_poses = [entity.state.p_pos for entity in self.world.entities if entity.adversary]
+                else:
+                    agent_poses = [entity.state.p_pos for entity in self.world.entities]
+                for o, other_pos in enumerate(agent_poses):
+                    if o == e or (hasattr(entity, "adversary") and not self.world.entities[e].adversary):  # other == me
                         continue
                     euclidean_dist = np.linalg.norm(other_pos - entity.state.p_pos)
                     if euclidean_dist <= entity.comm_range:

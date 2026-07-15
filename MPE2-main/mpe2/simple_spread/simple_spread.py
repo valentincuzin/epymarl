@@ -99,18 +99,15 @@ class raw_env(SimpleEnv, EzPickle):
         benchmark_data=False,
         curriculum=False,
         terminate_on_success=False,
-        num_agent_neighbors=None,
-        num_landmark_neighbors=None,
+        observation_range=None,
+        visual_comm_range=None,
     ):
-        assert (
-            0.0 <= local_ratio <= 1.0
-        ), "local_ratio is a proportion. Must be between 0 and 1."
-        assert num_agent_neighbors is None or (
-            isinstance(num_agent_neighbors, int) and num_agent_neighbors > 0
-        ), "num_agent_neighbors must be a positive integer or None."
-        assert num_landmark_neighbors is None or (
-            isinstance(num_landmark_neighbors, int) and num_landmark_neighbors > 0
-        ), "num_landmark_neighbors must be a positive integer or None."
+        assert 0.0 <= local_ratio <= 1.0, (
+            "local_ratio is a proportion. Must be between 0 and 1."
+        )
+        assert observation_range is None or (
+            isinstance(observation_range, float) and observation_range >= 0.0
+        ), "observation_range must be a positive float or None."
         EzPickle.__init__(
             self,
             N=N,
@@ -121,14 +118,14 @@ class raw_env(SimpleEnv, EzPickle):
             benchmark_data=benchmark_data,
             curriculum=curriculum,
             terminate_on_success=terminate_on_success,
-            num_agent_neighbors=num_agent_neighbors,
-            num_landmark_neighbors=num_landmark_neighbors,
+            observation_range=observation_range,
+            visual_comm_range=visual_comm_range,
         )
         scenario = Scenario(
             curriculum=curriculum,
             terminate_on_success=terminate_on_success,
-            num_agent_neighbors=num_agent_neighbors,
-            num_landmark_neighbors=num_landmark_neighbors,
+            observation_range=observation_range,
+            visual_comm_range=visual_comm_range,
         )
         world = scenario.make_world(N)
         SimpleEnv.__init__(
@@ -174,12 +171,18 @@ class Scenario(BaseScenario):
     # Distance threshold within which an agent is considered to "occupy" a landmark.
     CAPTURE_RADIUS = 0.1
 
-    def __init__(self, curriculum=False, terminate_on_success=False, num_agent_neighbors=None, num_landmark_neighbors=None,):
+    def __init__(
+        self,
+        curriculum=False,
+        terminate_on_success=False,
+        observation_range=None,
+        visual_comm_range=None,
+    ):
         self.curriculum = curriculum
         self.curriculum_stage = 0
         self.terminate_on_success = terminate_on_success
-        self.num_agent_neighbors = num_agent_neighbors
-        self.num_landmark_neighbors = num_landmark_neighbors
+        self.observation_range = observation_range
+        self.visual_comm_range = visual_comm_range
 
     def advance_curriculum(self):
         """Move to the next curriculum stage. No-op at the final stage."""
@@ -206,6 +209,8 @@ class Scenario(BaseScenario):
             agent.collide = True
             agent.silent = True
             agent.size = 0.15
+            agent.obs_range = self.observation_range
+            agent.comm_range = self.visual_comm_range
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
@@ -279,7 +284,9 @@ class Scenario(BaseScenario):
         # In curriculum stage 0, the collision penalty is suppressed so agents first learn to reach landmarks.
         rew = 0
         stage_config = self.CURRICULUM_STAGES[self.curriculum_stage]
-        collision_penalty_active = (not self.curriculum) or stage_config["collision_penalty"]
+        collision_penalty_active = (not self.curriculum) or stage_config[
+            "collision_penalty"
+        ]
         if agent.collide and collision_penalty_active:
             for a in world.agents:
                 rew -= 1.0 * (self.is_collision(a, agent) and a != agent)
@@ -308,24 +315,49 @@ class Scenario(BaseScenario):
         """
         others = [other for other in world.agents if other is not agent]
 
-        # lsndmarks
-        if self.num_landmark_neighbors is None:
-            entity_pos = [e.state.p_pos - agent.state.p_pos for e in world.landmarks]
-        else:
-            entity_pos = padded_relative_positions(
-                agent, world.landmarks, self.num_landmark_neighbors
-            )
+        # landmarks
+        entity_pos = get_others_pos(agent, world.landmarks, self.observation_range)
 
-        # Other agents + comm
-        if self.num_agent_neighbors is None:
-            other_pos = [o.state.p_pos - agent.state.p_pos for o in others]
-            comm = [o.state.c for o in others]
-        else:
-            other_pos = padded_relative_positions(
-                agent, others, self.num_agent_neighbors
-            )
-            comm = padded_comms(agent, others, self.num_agent_neighbors, world.dim_c)
+        others_info = get_others_infos(agent, others, self.observation_range)
 
         return np.concatenate(
-            [agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + comm
+            [agent.state.p_pos] + [agent.state.p_vel] + entity_pos + others_info
         )
+
+def get_others_pos(agent, others, observation_range):
+    """
+    Get other positions
+    if there are in the observation range of the agent.
+    """
+    others_info = []
+    visible = True
+    for other in others:
+
+        if observation_range is not None:
+            euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
+            visible = euclidean_dist <= agent.obs_range
+
+        if visible or observation_range is None:
+            others_info.append(other.state.p_pos - agent.state.p_pos)  # relative pos
+        else:
+            others_info.append(np.zeros(2))
+    return others_info
+
+def get_others_infos(agent, others, observation_range):
+    """
+    Get other positions and velocities
+    if there are in the observation range of the agent.
+    """
+    others_info = []
+    visible = True
+    for other in others:
+        if observation_range is not None:
+            euclidean_dist = np.linalg.norm(other.state.p_pos - agent.state.p_pos)
+            visible = euclidean_dist <= agent.obs_range
+
+        if visible or observation_range is None:
+            others_info.append(other.state.p_pos - agent.state.p_pos)  # relative pos
+            others_info.append(other.state.p_vel.copy())  # velocity
+        else:
+            others_info.append(np.zeros(4))
+    return others_info

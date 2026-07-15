@@ -38,10 +38,9 @@ class ParallelRunner:
             )
             env_args[i]["common_reward"] = self.args.common_reward
             env_args[i]["reward_scalarisation"] = self.args.reward_scalarisation
-        if not hasattr(args, "trial"):
-            pass
-            # env_args[0]["prefix_video"] = self.args.unique_token
-            # env_args[0]["test_interval"] = self.args.save_model_interval // self.args.batch_size
+        if not hasattr(args, "trial") and args.record:
+            env_args[0]["prefix_video"] = self.args.unique_token
+            env_args[0]["test_interval"] = self.args.save_model_interval // self.args.batch_size
         self.ps = [
             Process(
                 target=env_worker,

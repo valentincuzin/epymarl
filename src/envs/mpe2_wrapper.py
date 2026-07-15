@@ -53,7 +53,8 @@ class MPE2Wrapper(gym.Env):
         truncated = all([truncated[k] for k in self._env.agents])
         sum_info = 0
         for value in infos.values():
-            sum_info += value["benchmark_data"]  # sum on n agents
+            if "benchmark_data" in value.keys():
+                sum_info += value["benchmark_data"]  # sum on n agents
         self.infos["ep_nb_captures"] += sum_info
         if done:
             # empty obs and rewards for mpe environments on terminated episode

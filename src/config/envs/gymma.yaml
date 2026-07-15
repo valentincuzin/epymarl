@@ -4,6 +4,9 @@ env_args:
   key: null
   time_limit: 100
   pretrained_wrapper: null
+  dynamic_rescaling: True
+  # benchmark_data: True
+  render_mode: 'rgb_array'
 
 test_greedy: True
 test_nepisode: 100

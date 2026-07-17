@@ -47,7 +47,7 @@ class EGCNAgent(nn.Module):
         param = next(self.parameters())
         return param.new_zeros(1, self.args.h_dim)
 
-    def forward(self, inputs, hidden_states):
+    def forward(self, inputs, hidden_states=None, fast_weights=None):
         x = self.base(inputs)
         h = self._communication_process(inputs, x)
         q = self.act_prob(h)

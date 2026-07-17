@@ -276,7 +276,7 @@ class ParallelRunner:
                 over_time_metrics, mean_metrics = compute_graphs_metrics(self.batch["graphs"], self.args.batch_size, self.args, cur_stats["n_episodes"])
                 self.logger.log_plot(over_time_metrics)
                 cur_stats.update(mean_metrics)
-            if dist_avg_over_time is not None:
+            if dist_avg_over_time is not None and self.args.use_wandb:
                 self.logger.log_rew_plot("dist_avg_over_time", dist_avg_over_time, dist_std_over_time, associed_rew_over_time)
             self._log(cur_returns, cur_stats, log_prefix)
         elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:

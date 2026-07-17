@@ -54,7 +54,7 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_tgn_settings(trial, param)
         case "egcn":
             param = hp.hp_egcn_settings(trial, param)
-    param["t_max"] = int(param["t_max"])  # we only tune for fast learning
+    param["t_max"] = int(2*(param["t_max"]/3))  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning
     hp_args = SN(**param)

@@ -8,13 +8,13 @@ reward_scalarisation: "sum"  # How to aggregate rewards to single common reward 
 
 env_args: {
   # mpe2-simple-spread-v3
-  N: 10,
+  # N: 10,
 
   # mpe2-simple-tag-v3
-  # num_good: 2,
-  # num_adversaries: 6,
-  # num_obstacles: 0,
-  # max_cycles: 50,
+  num_good: 2,
+  num_adversaries: 6,
+  num_obstacles: 0,
+  max_cycles: 50,
 
   observation_range: 0.25,
 } # Arguments for the environment
@@ -33,7 +33,7 @@ seed: 0
 
 # --- Logging options ---
 use_tensorboard: False # Log results to tensorboard
-use_wandb: True # Log results to W&B
+use_wandb: False # Log results to W&B
 wandb_team: valentincuzin-ucbl1 # W&B team name
 wandb_project: spread-10 # W&B project name
 wandb_mode: "online" # W&B mode (online/offline)

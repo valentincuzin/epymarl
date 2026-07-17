@@ -22,7 +22,7 @@ micromamba activate p313
 cd ~/epymarl/
 # run Python script
 python src/main.py --seed=0 --hp_search=25 --config=eg-mappo --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"
-python src/main.py --seed=1 --config=eg-mappo --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"
-python src/main.py --seed=2 --config=eg-mappo --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"
+# python src/main.py --seed=1 --config=eg-mappo --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"
+# python src/main.py --seed=2 --config=eg-mappo --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"
 
 # python src/main.py --seed=0 --config=mappo-g-r --env-config=gymma with env_args.key="mpe2-simple-tag-v3" env_args.pretrained_wrapper="FrozenTag"

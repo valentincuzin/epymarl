@@ -1,0 +1,10 @@
+batch_size: 64
+buffer_size: 64
+entropy_coef: 0.06999999999999999
+epochs: 5
+eps_clip: 0.1
+grad_norm_clip: 0.8
+lr: 0.001
+q_nstep: 5
+standardise_returns: false
+target_update_interval_or_tau: 0.060000000000000005

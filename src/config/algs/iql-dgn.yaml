@@ -1,6 +1,8 @@
 # --- IQL specific parameters ---
 
+
 # use epsilon greedy action selector
+mac: "basic_mac" # Basic controller
 action_selector: "epsilon_greedy"
 epsilon_start: 1.0
 epsilon_finish: 0.05
@@ -18,8 +20,7 @@ lr: 0.0003
 grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
 
 h_dim: 128
-
-n_layers: 2
+gnn_dim: 256
 
 obs_agent_id: True
 obs_last_action: False
@@ -35,5 +36,5 @@ double_q: True
 
 mixer: # Mixer becomes None
 
-name: "iql"
-agent: "mlp"
+name: "dgn"
+agent: "dgn"

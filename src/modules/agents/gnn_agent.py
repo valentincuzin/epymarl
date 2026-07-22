@@ -4,10 +4,27 @@ from functools import partial
 
 import torch.nn as nn
 import torch.functional as F
-from torch_geometric.nn import GATv2Conv, MessagePassing, Sequential
+from torch_geometric.nn import SAGEConv, GCNConv, GINConv, GATv2Conv, MessagePassing, Sequential
 from utils.gnn_utils import batch_from_dense_to_ptg, print_graph, create_gif, attach_att
 from functorch import make_functional_with_buffers
 
+def get_gnn_conv(name: str, args, in_channels, out_channels):
+    gnn_conv = None
+    match name:
+        case "gcn":
+            gnn_conv = GCNConv(in_channels, out_channels)
+        case "gat":
+            gnn_conv = GATv2Conv(in_channels, out_channels, edge_dim=3 if args.edge_attr else None, residual=args.residual_gat)
+        case "gin":
+            mlp = nn.Sequential(
+                nn.Linear(in_channels, out_channels),
+                nn.ReLU(),
+                nn.Linear(out_channels, out_channels),
+            )
+            gnn_conv = GINConv(mlp)
+        case "sage":
+            gnn_conv = SAGEConv(in_channels, out_channels)
+    return gnn_conv
 
 class GNNAgentBase(nn.Module):
     def __init__(self, input_shape, args):
@@ -22,12 +39,7 @@ class GNNAgentBase(nn.Module):
             input_shape = args.h_dim
         self.base = nn.Sequential(*self.fc_layers)
         # comm modules:
-        self.gnns: MessagePassing = GATv2Conv(
-            input_shape,
-            args.gnn_dim,
-            edge_dim=3 if self.args.edge_attr else None,
-            residual=self.args.residual_gat,
-        )
+        self.gnns: MessagePassing = get_gnn_conv(args.gnn_conv, args, input_shape, args.gnn_dim)
 
     def forward(self, inputs, hidden_state=None):
         x = self.base(inputs)
@@ -37,13 +49,19 @@ class GNNAgentBase(nn.Module):
     def _communication_process(self, raw_inputs, x):
         graphs = self._select_communication(raw_inputs)
         graphs.x = x
-        h, att = self.gnns(
-            graphs.x,
-            graphs.edge_index,
-            graphs.edge_attr if self.args.edge_attr else None,
-            return_attention_weights=True
-        )
-        graphs = attach_att(graphs, att)
+        if self.args.gnn_conv == "gat":
+            h, att = self.gnns(
+                graphs.x,
+                graphs.edge_index,
+                graphs.edge_attr if self.args.edge_attr else None,
+                return_attention_weights=True
+            )
+            graphs = attach_att(graphs, att)
+        else:
+            h = self.gnns(
+                graphs.x,
+                graphs.edge_index,
+            )
         return h, graphs
 
     def _select_communication(self, x):
@@ -148,9 +166,9 @@ class GNNAgentV2(nn.Module):
 
     def forward(self, inputs, hidden_state=None):
         x = self.base(inputs)
-        h = self._communication_process(inputs, x)
+        h, graphs = self._communication_process(inputs, x)
         q = self.act_prob(h)
-        return q, None
+        return q, None, graphs
 
     def _communication_process(self, raw_inputs, x):
         graphs = self._select_communication(raw_inputs)
@@ -161,7 +179,7 @@ class GNNAgentV2(nn.Module):
             graphs.edge_attr if self.args.edge_attr else None,
         )
 
-        return h
+        return h, graphs
 
     def _select_communication(self, x):
         graphs = batch_from_dense_to_ptg(x, self.args.batch_size, self.args)

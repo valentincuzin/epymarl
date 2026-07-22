@@ -20,7 +20,7 @@ grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
 
 h_dim: 192
 gnn_dim: 256
-gnn_conv: gat
+gnn_conv: gcn
 
 n_layers: 0
 
@@ -38,5 +38,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.2
 
-name: "mappo-gnn"
+name: "mappo-gcn"
 agent: "gnn"

@@ -29,7 +29,9 @@ import utils.hp as hp
 
 def _objective(trial, args_dict, _log):
     param = copy.deepcopy(args_dict)
-    if "qmix" in param["name"]:
+    if "iql" in param["name"]:
+        param = hp.hp_iql_settings(trial, param)
+    elif "qmix" in param["name"]:
         param = hp.hp_qmix_settings(trial, param)
     elif "ltscg" in param["name"]:
         param = hp.hp_ltscg_settings(trial, param)
@@ -46,6 +48,8 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_rnn_settings(trial, param)
         case "gnn":
             param = hp.hp_gnn_settings(trial, param)
+        case "gnn_v2":
+            param = hp.hp_gnn_settings(trial, param)
         case "gnn_rnn":
             param = hp.hp_gnn_rnn_settings(trial, param)
         case "rnn_gnn":  # same as gnn_rnn
@@ -54,6 +58,8 @@ def _objective(trial, args_dict, _log):
             param = hp.hp_tgn_settings(trial, param)
         case "egcn":
             param = hp.hp_egcn_settings(trial, param)
+        case "dgn":
+            param = hp.hp_dgn_settings(trial, param)
     param["t_max"] = int(2*(param["t_max"]/3))  # we only tune for fast learning
     param["save_model"] = False  # no need to save
     param["trial"] = trial  # for trial.prunning

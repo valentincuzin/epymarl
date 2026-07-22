@@ -1,6 +1,8 @@
 # --- MAPPO specific parameters ---
 
-mac: "comm_mac" # Basic controller
+
+# use epsilon greedy action selector
+mac: "basic_mac" # Basic controller
 action_selector: "soft_policies"
 mask_before_softmax: True
 
@@ -9,10 +11,7 @@ runner: "parallel"
 buffer_size: 128
 batch_size: 128
 
-residual_gat: True
-edge_attr: True
-
-# update the target network every {} training steps
+# update the target network every {} episodes
 target_update_interval_or_tau: 0.1
 
 lr: 0.0006
@@ -20,13 +19,10 @@ grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
 
 h_dim: 192
 gnn_dim: 256
-gnn_conv: gat
-
-n_layers: 0
 
 obs_agent_id: True
 obs_last_action: False
-obs_individual_obs: False  # always verify the state content (often concat of individuals obs)
+obs_individual_obs: False
 
 # use IA2C
 agent_output_type: "pi_logits"
@@ -38,5 +34,5 @@ critic_type: "cv_critic"
 epochs: 10
 eps_clip: 0.2
 
-name: "mappo-gnn"
-agent: "gnn"
+name: "mappo-dgn"
+agent: "dgn"

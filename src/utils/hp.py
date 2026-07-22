@@ -86,7 +86,7 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
         dict: updated params
     """
     hp["lr"] = trial.suggest_float("lr", 0.0001, 0.001, step=0.0001)  # 10
-    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.005, 0.2, step=0.005)  # 4
+    hp["eps_clip"] = trial.suggest_float("eps_clip", 0.05, 0.2, step=0.05)  # 4
 
     hp["q_nstep"] = trial.suggest_int("q_nstep", 5, 15, step=5)  # 3
     hp["entropy_coef"] = trial.suggest_float("entropy_coef", 0.01, 0.1, step=0.01)  # 10
@@ -97,7 +97,7 @@ def hp_mappo_settings(trial: Trial, hp: dict) -> dict:
             "standardise_returns", [False, True]
         )  # 2
     hp["epochs"] = trial.suggest_int("epochs", 5, 15, step=5)  # 3
-    hp["batch_size"] = 128 # trial.suggest_int("batch_size", 32, 128, step=32)  # 4
+    hp["batch_size"] = trial.suggest_int("batch_size", 32, 128, step=32)  # 4
     hp["buffer_size"] = hp["batch_size"]
 
     return hp
@@ -202,6 +202,39 @@ def hp_dicg_settings(trial: Trial, hp: dict) -> dict:
 
     return hp
 
+def hp_iql_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for classic iql train process
+
+    Args:
+        trial (Trial):
+        hp (dict):
+
+    Returns:
+        dict: updated params
+    """
+    hp["lr"] = trial.suggest_float("lr", 0.0001, 0.001, step=0.0001)  # 10
+    hp["epsilon_start"] = trial.suggest_float("epsilon_start", 0.8, 1.0, step=0.1)  # 3
+    hp["epsilon_finish"] = trial.suggest_float("epsilon_finish", 0.01, 0.1, step=0.01) # 10
+    hp["epsilon_anneal_time"] = trial.suggest_categorical(
+        "epsilon_anneal_time", [10000, 50000, 100000]
+    )  # 3
+
+    hp["standardise_returns"] = trial.suggest_categorical(
+        "standardise_returns", [False, True]
+    )  # 2
+    hp["target_update_interval_or_tau"] = trial.suggest_int(
+        "target_update_interval_or_tau", 50, 500, step=50
+    ) # 10 
+
+    hp["batch_size"] = trial.suggest_int("batch_size", 32, 128, step=32) # 4
+    hp["buffer_size"] = trial.suggest_int("buffer_size", 5000, 20000, step=5000) # 4
+
+    return hp
+
+
+
+## Agents Architectures
 
 def hp_mlp_settings(trial: Trial, hp: dict) -> dict:
     """
@@ -236,6 +269,19 @@ def hp_rnn_settings(trial: Trial, hp: dict) -> dict:
     hp["mem_dim"] = trial.suggest_int("mem_dim", 64, 512, step=64)
     return hp
 
+def hp_dgn_settings(trial: Trial, hp: dict) -> dict:
+    """
+    suggest params for gnn architecture
+
+    Args:
+        trial (Trial):
+        hp (dict):
+
+    Returns:
+        dict: updated params
+    """
+    hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
+    return hp
 
 def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
     """
@@ -251,7 +297,8 @@ def hp_gnn_settings(trial: Trial, hp: dict) -> dict:
     hp["n_layers"] = trial.suggest_int("n_layers", 0, 2)
     hp["h_dim"] = trial.suggest_int("h_dim", 64, 512, step=64)
     hp["gnn_dim"] = trial.suggest_int("gnn_dim", 64, 512, step=64)
-    hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
+    if hp["gnn_conv"] == "gat":
+        hp["residual_gat"] = trial.suggest_categorical("residual_gat", [False, True])
     return hp
 
 def hp_gnn_rnn_settings(trial: Trial, hp: dict) -> dict:

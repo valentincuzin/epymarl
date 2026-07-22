@@ -272,7 +272,7 @@ class ParallelRunner:
             create_gif(self.batch["graphs"], self.args.batch_size, self.args.unique_token, self.args.n_agents, self.t_env)
             self.log_graphs_t = self.t_env
         if test_mode and (len(self.test_returns) == n_test_runs):
-            if self.args.mac == "comm_mac":
+            if self.args.mac == "comm_mac" and self.args.use_wandb and not hasattr(self.args, "trial"):
                 over_time_metrics, mean_metrics = compute_graphs_metrics(self.batch["graphs"], self.args.batch_size, self.args, cur_stats["n_episodes"])
                 self.logger.log_plot(over_time_metrics)
                 cur_stats.update(mean_metrics)

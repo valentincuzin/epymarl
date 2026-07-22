@@ -269,11 +269,12 @@ def print_graph(graphs: pyg.data.Batch, t: int, batch_size, n_agents, unique_tok
         (graphs.batch[graphs.edge_index[1]] == 0)
     )
 
-    graph.edge_att =  graphs.edge_att[mask_g0].cpu().numpy()
+    if hasattr(graph, "edge_att"):
+        graph.edge_att =  graphs.edge_att[mask_g0].cpu().numpy()
     G = pyg.utils.to_networkx(graph)
     colors = [n for n in G.nodes()]
     plt.figure()
-    nx.draw(G, graph.pos, node_size=20, arrowsize=5, width=graph.edge_att*5, node_color=colors)
+    nx.draw(G, graph.pos, node_size=20, arrowsize=5, width=graph.edge_att*5 if hasattr(graph, "edge_att") else 1, node_color=colors)
     plt.savefig(f"results/graphs/raw_img/{unique_token}-t_{t}.png")
     plt.clf()
     plt.close()
@@ -299,3 +300,18 @@ def _get_pos_from_x(x: th.Tensor, task_name: str):
     elif task_name.startswith("rware:"):
         pos = x[:, :2]
     return pos, vel
+
+def reachable_masks(x: th.Tensor, args):
+    pos, _ = _get_pos_from_x(x,  args.env_args["key"])
+    pos = pos.view(args.batch_size, args.n_agents, pos.shape[-1])
+    if args.comm_constraints["cr"] is None:
+        return th.eye(args.n_agents).unsqueeze(0).repeat(args.batch_size, 1, 1)
+    if args.comm_constraints["cr"] == -1:  # no comm range
+        return th.ones((args.batch_size, args.n_agents, args.n_agents))
+    else:
+        if pos.dim() == 2:
+            pos = pos.unsqueeze(0)  # -> [1, N, 2]
+        diff = pos.unsqueeze(2) - pos.unsqueeze(1)  # [batch, n_agents, n_agents, 2]
+        dist2 = (diff ** 2).sum(dim=-1)  # [batch, n_agents, n_agents]
+        masks = (dist2 <= args.comm_constraints["cr"]*args.comm_constraints["cr"]).float()  # [batch, n_agents, n_agents]
+        return masks

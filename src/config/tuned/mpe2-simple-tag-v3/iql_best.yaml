@@ -1,0 +1,10 @@
+batch_size: 96
+buffer_size: 5000
+epsilon_anneal_time: 50000
+epsilon_finish: 0.03
+epsilon_start: 0.9
+h_dim: 512
+lr: 0.0006000000000000001
+n_layers: 1
+standardise_returns: true
+target_update_interval_or_tau: 350
